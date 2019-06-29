@@ -8,11 +8,9 @@ import (
 func TestEnqueue(t *testing.T) {
 
 	var item = Item{
-		"",
 		"sample.task",
 		"Register",
 		"Normal",
-		1,
 	}
 
 	q, err := NewDQueue()
@@ -20,7 +18,7 @@ func TestEnqueue(t *testing.T) {
 		t.Errorf("%s", err)
 	}
 	defer func() {
-		for q.dque.Size() > 0 {
+		for q.Dque.Size() > 0 {
 			_, err := q.Pop()
 			if err != nil {
 				t.Errorf("%s", err)
@@ -28,11 +26,11 @@ func TestEnqueue(t *testing.T) {
 		}
 	}()
 
-	err = q.Push(item)
+	err = q.Push(&item)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
-	fmt.Println(q.dque.Size())
+	fmt.Println(q.Dque.Size())
 }
 
 func TestDequeue(t *testing.T) {
@@ -42,7 +40,7 @@ func TestDequeue(t *testing.T) {
 		t.Errorf("%s", err)
 	}
 	defer func() {
-		for q.dque.Size() > 0 {
+		for q.Dque.Size() > 0 {
 			_, err := q.Pop()
 			if err != nil {
 				t.Errorf("%s", err)
@@ -50,12 +48,10 @@ func TestDequeue(t *testing.T) {
 		}
 	}()
 
-	err = q.Push(Item{
-		"",
+	err = q.Push(&Item{
 		"sample.task",
 		"Register",
 		"Normal",
-		1,
 	})
 
 	message, err := q.Pop()
@@ -66,30 +62,26 @@ func TestDequeue(t *testing.T) {
 		t.Log("No message.")
 	}
 
-	err = q.Push(Item{
-		"",
+	err = q.Push(&Item{
 		"sample.task",
 		"Register",
 		"Normal",
-		1,
 	})
 	if err != nil {
 		t.Errorf("%s", err)
 	}
 
 	t.Log(message)
-	t.Log(q.dque.Size())
+	t.Log(q.Dque.Size())
 
-	err = q.Push(Item{
-		"",
+	err = q.Push(&Item{
 		"sample.task",
 		"Register",
 		"Normal",
-		1,
 	})
 	if err != nil {
 		t.Errorf("%s", err)
 	}
 	t.Log(message)
-	t.Log(q.dque.Size())
+	t.Log(q.Dque.Size())
 }
