@@ -16,7 +16,9 @@ func WatchTask(ch chan<- repository.KrTaskStatus) error {
 	}
 
 	for _, v := range *list {
-		log.Printf("Executable task found. ", v)
+		log.Printf("Executable task found. Put channel. %v", v)
+		// 管理テーブルの更新(実行待ち->実行可能)
+		repository.UpdateKrTaskStatus(&repository.Status{"0"}, &repository.Status{"1"}, &v)
 		ch <- v
 	}
 	return nil

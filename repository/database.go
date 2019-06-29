@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"log"
 	"time"
 
@@ -84,7 +85,7 @@ func SelectExecTarget() (*[]KrTaskStatus, error) {
 				and	base.job_flow_id = dep.job_flow_id
 		where	1=1
 			and	coalesce(dep.status, '3') = '3'
-			and	base.status in ('0', '1')
+			and	base.status in ('0')
 		;
 	`
 
@@ -105,7 +106,6 @@ func SelectExecTarget() (*[]KrTaskStatus, error) {
 			log.Fatal(err)
 			return nil, err
 		}
-		log.Println(job_flow_id, task_id, job_exec_seq, response_body)
 		list = append(list, KrTaskStatus{
 			job_flow_id,
 			task_id,
@@ -121,18 +121,19 @@ type Status struct {
 	S string
 }
 
-func UpdateKrTaskStatus(status *Status, task *KrTaskStatus) error {
-	statement := "UPDATE kr_task_status SET status = $1, update_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5"
+func UpdateKrTaskStatus(fromStat *Status, toStat *Status, task *KrTaskStatus) (sql.Result, error) {
+	statement := "UPDATE kr_task_status SET status = $1, update_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
 	stmt, err := Conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
 
 	defer stmt.Close()
-	if _, err := stmt.Exec(status.S, time.Now(), task.JobFlowId, task.TaskId, task.JobExecSeq); err != nil {
+	cnt, err := stmt.Exec(toStat.S, time.Now(), task.JobFlowId, task.TaskId, task.JobExecSeq, fromStat.S)
+	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
-	return nil
+	return cnt, nil
 }

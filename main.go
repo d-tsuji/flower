@@ -11,7 +11,9 @@ func main() {
 
 	taskChannel := make(chan repository.KrTaskStatus, 10)
 
-	go app.Run(taskChannel)
+	for i := 0; i < 10; i++ {
+		go app.Run(taskChannel)
+	}
 	for {
 		_ = app.WatchTask(taskChannel)
 		time.Sleep(5 * time.Second)

@@ -8,14 +8,23 @@ import (
 )
 
 func TestInsertTaskDifinision(t *testing.T) {
+	truncateTable()
+
 	item := &queue.Item{
 		"",
 		"sample.a.id",
 		"Normal",
 	}
-
-	truncateTable()
 	err := InsertTaskDifinision(item)
+	if err != nil {
+		t.Error(err)
+	}
+	item = &queue.Item{
+		"",
+		"sample.b.id",
+		"Normal",
+	}
+	err = InsertTaskDifinision(item)
 	if err != nil {
 		t.Error(err)
 	}
