@@ -15,7 +15,7 @@ func TestInsertTaskDifinision(t *testing.T) {
 		"sample.a.id",
 		"Normal",
 	}
-	err := InsertTaskDifinision(item)
+	_, err := InsertTaskDifinision(item)
 	if err != nil {
 		t.Error(err)
 	}
@@ -24,7 +24,7 @@ func TestInsertTaskDifinision(t *testing.T) {
 		"sample.b.id",
 		"Normal",
 	}
-	err = InsertTaskDifinision(item)
+	_, err = InsertTaskDifinision(item)
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,7 +32,7 @@ func TestInsertTaskDifinision(t *testing.T) {
 
 func truncateTable() {
 	tableName := "kr_task_status"
-	if _, err := Conn.Exec("TRUNCATE TABLE " + tableName); err != nil {
+	if _, err := conn.Exec("TRUNCATE TABLE " + tableName); err != nil {
 		log.Fatal(err)
 	}
 }

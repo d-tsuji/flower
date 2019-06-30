@@ -29,7 +29,7 @@ func InvokeTaskRegister(q *queue.DQueue) {
 	}
 
 	if item.TaskType == "Register" {
-		err := repository.InsertTaskDifinision(item)
+		_, err := repository.InsertTaskDifinision(item)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

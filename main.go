@@ -16,11 +16,11 @@ var pollingIntervalSecond time.Duration = 5
 func main() {
 
 	// テスト用のHTTPサーバを起動し、リクエストに応じてタスクを登録
-	go mock.StartServer()
+	go mock.RegisterTask()
 
 	taskChannel := make(chan repository.KrTaskStatus, concurrency)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < concurrency; i++ {
 		go app.Run(taskChannel)
 	}
 	for {

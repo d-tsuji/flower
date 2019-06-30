@@ -39,7 +39,7 @@ func Run(ch chan repository.KrTaskStatus) {
 		}
 
 		// 管理テーブルの更新(実行中->正常終了)
-		repository.UpdateKrTaskStatus(&repository.Status{"2"}, &repository.Status{"3"}, &v)
+		repository.UpdateCompleteKrTaskStatus(&repository.Status{"2"}, &repository.Status{"3"}, res, &v)
 		WatchTask(ch)
 	}
 }

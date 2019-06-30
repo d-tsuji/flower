@@ -14,7 +14,7 @@ func InvokeExecTaskRegistry(q *queue.DQueue) {
 		log.Fatal(err.Error())
 	}
 
-	err = repository.InsertTaskDifinision(item)
+	_, err = repository.InsertTaskDifinision(item)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

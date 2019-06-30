@@ -4,13 +4,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/d-tsuji/flower/repository"
 )
 
 func RestCall(r *repository.RestTask) ([]byte, error) {
 	client := &http.Client{}
-	request, err := http.NewRequest(r.Method, r.Endpoint, nil)
+	request, err := http.NewRequest(r.Method, r.Endpoint, strings.NewReader(r.ExtendParameter))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err

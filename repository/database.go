@@ -5,16 +5,15 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/d-tsuji/flower/queue"
+	"github.com/google/uuid"
 )
 
 type TaskDifinition struct {
 }
 
 // ms_taskの実行順序から依存関係を決定し、kr_task_statusに実行待ちとして登録する
-func InsertTaskDifinision(item *queue.Item) error {
+func InsertTaskDifinision(item *queue.Item) (sql.Result, error) {
 
 	statement :=
 		"INSERT INTO kr_task_status (job_flow_id, task_id, job_exec_seq, job_depend_exec_seq, wait_mode, status, response_body, priority, create_ts, update_ts)" +
@@ -25,15 +24,16 @@ func InsertTaskDifinision(item *queue.Item) error {
 	stmt, err := Conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
 
 	defer stmt.Close()
-	if _, err := stmt.Exec(uuid.New(), item.TaskId, time.Now(), time.Now()); err != nil {
+	res, err := stmt.Exec(uuid.New(), item.TaskId, time.Now(), time.Now())
+	if err != nil {
 		log.Fatal(err)
-		return err
+		return nil, err
 	}
-	return nil
+	return res, nil
 }
 
 type RestTask struct {
@@ -134,6 +134,23 @@ func UpdateKrTaskStatus(fromStat *Status, toStat *Status, task *KrTaskStatus) (s
 
 	defer stmt.Close()
 	cnt, err := stmt.Exec(toStat.S, time.Now(), task.JobFlowId, task.TaskId, task.JobExecSeq, fromStat.S)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	return cnt, nil
+}
+
+func UpdateCompleteKrTaskStatus(fromStat *Status, toStat *Status, res []byte, task *KrTaskStatus) (sql.Result, error) {
+	statement := "UPDATE kr_task_status SET status = $1, update_ts = $2, response_body = $7 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
+	stmt, err := Conn.Prepare(statement)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
+	defer stmt.Close()
+	cnt, err := stmt.Exec(toStat.S, time.Now(), task.JobFlowId, task.TaskId, task.JobExecSeq, fromStat.S, string(res))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err

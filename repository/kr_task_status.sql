@@ -7,7 +7,7 @@ CREATE TABLE kr_task_status (
 	job_depend_exec_seq numeric,
 	wait_mode character varying(256),
 	status character varying(128),
-	response_body character varying(4048),
+	response_body text,
 	priority numeric,
 	create_ts timestamp,
 	update_ts timestamp
