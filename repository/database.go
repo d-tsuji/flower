@@ -37,8 +37,9 @@ func InsertTaskDifinision(item *queue.Item) error {
 }
 
 type RestTask struct {
-	Endpoint string `db:"endpoint"`
-	Method   string `db:"method"`
+	Endpoint        string `db:"endpoint"`
+	Method          string `db:"method"`
+	ExtendParameter string `db:"extend_parameters"`
 	// TODO: パラメータなど
 }
 
@@ -47,8 +48,9 @@ func GetExecRestTaskDefinision(item *KrTaskStatus) (*RestTask, error) {
 
 	var endpoint string
 	var method string
-	query := "select t.endpoint, t.method from ms_task t where t.task_id = $1 and t.exec_order = $2"
-	err := Conn.QueryRow(query, item.TaskId, item.JobExecSeq).Scan(&endpoint, &method)
+	var extendParameter string
+	query := "select t.endpoint, t.method, t.extend_parameters from ms_task t where t.task_id = $1 and t.exec_order = $2"
+	err := Conn.QueryRow(query, item.TaskId, item.JobExecSeq).Scan(&endpoint, &method, &extendParameter)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -56,6 +58,7 @@ func GetExecRestTaskDefinision(item *KrTaskStatus) (*RestTask, error) {
 	return &RestTask{
 		endpoint,
 		method,
+		extendParameter,
 	}, nil
 }
 

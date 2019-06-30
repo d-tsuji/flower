@@ -25,7 +25,7 @@ func Run(ch chan repository.KrTaskStatus) {
 			log.Fatal(err)
 		}
 		if cnt == 0 {
-			log.Printf("This task still started by other process. v")
+			log.Printf("This task still started by other process. %v", v)
 			continue
 		}
 
