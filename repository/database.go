@@ -16,8 +16,8 @@ type TaskDifinition struct {
 func InsertTaskDifinision(item *queue.Item) (sql.Result, error) {
 
 	statement :=
-		"INSERT INTO kr_task_status (job_flow_id, task_id, job_exec_seq, job_depend_exec_seq, wait_mode, status, response_body, priority, create_ts, update_ts)" +
-			"SELECT $1, task_id, exec_order, depend_exec_order, wait_mode, status, '', 0 ,$3, $4 " +
+		"INSERT INTO kr_task_status (job_flow_id, task_id, job_exec_seq, job_depend_exec_seq, wait_mode, status, response_body, priority, create_ts, start_ts,  finish_ts)" +
+			"SELECT $1, task_id, exec_order, depend_exec_order, wait_mode, status, '', 0 ,$3, null, null " +
 			"FROM " +
 			"(SELECT task_id, exec_order, lag(exec_order, 1) over(partition by task_id order by exec_order) depend_exec_order, wait_mode, '0' status " +
 			"FROM ms_task t WHERE t.task_id = $2) res"
@@ -28,7 +28,7 @@ func InsertTaskDifinision(item *queue.Item) (sql.Result, error) {
 	}
 
 	defer stmt.Close()
-	res, err := stmt.Exec(uuid.New(), item.TaskId, time.Now(), time.Now())
+	res, err := stmt.Exec(uuid.New(), item.TaskId, time.Now())
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -89,6 +89,8 @@ func SelectExecTarget() (*[]KrTaskStatus, error) {
 		where	1=1
 			and	coalesce(dep.status, '3') = '3'
 			and	base.status in ('0')
+		order by
+			base.priority
 		;
 	`
 
@@ -125,7 +127,7 @@ type Status struct {
 }
 
 func UpdateKrTaskStatus(fromStat *Status, toStat *Status, task *KrTaskStatus) (sql.Result, error) {
-	statement := "UPDATE kr_task_status SET status = $1, update_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
+	statement := "UPDATE kr_task_status SET status = $1, start_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
 	stmt, err := Conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
@@ -142,7 +144,7 @@ func UpdateKrTaskStatus(fromStat *Status, toStat *Status, task *KrTaskStatus) (s
 }
 
 func UpdateCompleteKrTaskStatus(fromStat *Status, toStat *Status, res []byte, task *KrTaskStatus) (sql.Result, error) {
-	statement := "UPDATE kr_task_status SET status = $1, update_ts = $2, response_body = $7 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
+	statement := "UPDATE kr_task_status SET status = $1, finish_ts = $2, response_body = $7 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
 	stmt, err := Conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)

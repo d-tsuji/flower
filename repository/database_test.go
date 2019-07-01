@@ -32,7 +32,7 @@ func TestInsertTaskDifinision(t *testing.T) {
 
 func truncateTable() {
 	tableName := "kr_task_status"
-	if _, err := conn.Exec("TRUNCATE TABLE " + tableName); err != nil {
+	if _, err := Conn.Exec("TRUNCATE TABLE " + tableName); err != nil {
 		log.Fatal(err)
 	}
 }

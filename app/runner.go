@@ -8,7 +8,6 @@ import (
 
 func Run(ch chan repository.KrTaskStatus) {
 	for {
-		// 実行可能なタスクが存在する場合
 		v := <-ch
 		log.Printf("Task starting... : %v", v)
 
@@ -40,6 +39,10 @@ func Run(ch chan repository.KrTaskStatus) {
 
 		// 管理テーブルの更新(実行中->正常終了)
 		repository.UpdateCompleteKrTaskStatus(&repository.Status{"2"}, &repository.Status{"3"}, res, &v)
-		WatchTask(ch)
+		log.Printf("Task finished : %v", v)
+
+		// 非同期で後続タスクを呼び出す。
+		// 同期にするとチャネルのバッファがいっぱいのときにrunner#Runが終了できなくなり、デッドロックになる
+		go WatchTask(ch)
 	}
 }

@@ -10,11 +10,12 @@ CREATE TABLE kr_task_status (
 	response_body text,
 	priority numeric,
 	create_ts timestamp,
-	update_ts timestamp
+	start_ts timestamp,
+	finish_ts timestamp
 );
 
 select * from kr_task_status;
 
 select job_flow_id, task_id, job_exec_seq, job_depend_exec_seq,
-	wait_mode, status, response_body, create_ts, update_ts
+	wait_mode, status, response_body, create_ts, finish_ts
 from kr_task_status;
