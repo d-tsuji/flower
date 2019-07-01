@@ -7,9 +7,21 @@ import (
 
 	"github.com/d-tsuji/flower/queue"
 	"github.com/google/uuid"
+
+	_ "github.com/lib/pq"
 )
 
 type TaskDifinition struct {
+}
+
+var Conn *sql.DB
+
+func init() {
+	var err error
+	Conn, err = sql.Open("postgres", "user=dev dbname=dev password=dev host=localhost sslmode=disable")
+	if err != nil {
+		panic(err)
+	}
 }
 
 // ms_taskの実行順序から依存関係を決定し、kr_task_statusに実行待ちとして登録する
