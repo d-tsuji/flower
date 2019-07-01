@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+
+  postgresql:
+    image: postgres
+    container_name: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=dev
+      - POSTGRES_DB=dev
+    tty: true
+    restart: always
+    user: root
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+      # - /etc/localtime:/etc/localtime:ro
+
+  app:
+    container_name: app
+    depends_on:
+      - postgresql
+    links:
+      - postgresql
+    build:
+      context: .
+      dockerfile: Dockerfile

@@ -1,6 +1,7 @@
-DROP TABLE kr_task_status;
+DROP TABLE IF EXISTS kr_task_status;
 
-CREATE TABLE kr_task_status (
+CREATE TABLE kr_task_status
+(
 	job_flow_id character varying(256),
 	task_id character varying(256),
 	job_exec_seq numeric,
@@ -14,7 +15,8 @@ CREATE TABLE kr_task_status (
 	finish_ts timestamp
 );
 
-select * from kr_task_status;
+select *
+from kr_task_status;
 
 select job_flow_id, task_id, job_exec_seq, job_depend_exec_seq,
 	wait_mode, status, response_body, create_ts, finish_ts

@@ -10,7 +10,7 @@ var Conn *sql.DB
 
 func init() {
 
-	connStr := "postgres://dev:dev@localhost/dev?sslmode=disable"
+	connStr := "postgres://dev:dev@postgresql/dev?sslmode=disable"
 	conn, err := sql.Open("postgres", connStr)
 	if err != nil {
 		panic(err.Error)
