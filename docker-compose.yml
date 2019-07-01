@@ -4,7 +4,7 @@ services:
 
   postgresql:
     image: postgres
-    container_name: postgres
+#    container_name: postgres
     ports:
       - 5432:5432
     environment:
@@ -16,7 +16,6 @@ services:
     user: root
     volumes:
       - ./init:/docker-entrypoint-initdb.d
-      # - /etc/localtime:/etc/localtime:ro
 
   app:
     container_name: app
@@ -26,4 +25,4 @@ services:
       - postgresql
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
