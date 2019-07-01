@@ -4,7 +4,6 @@ services:
 
   db:
     image: postgres
-#    container_name: postgres
     ports:
       - 5432:5432
     environment:
@@ -18,6 +17,8 @@ services:
       - ./init:/docker-entrypoint-initdb.d
 
   app:
+    ports:
+      - 8021:8021
     container_name: app
     depends_on:
       - db
