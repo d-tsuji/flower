@@ -18,7 +18,7 @@ var Conn *sql.DB
 
 func init() {
 	var err error
-	Conn, err = sql.Open("postgres", "user=dev dbname=dev password=dev host=db sslmode=disable")
+	Conn, err = sql.Open("postgres", "user=postgres dbname=dev password=postgres host=db sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
