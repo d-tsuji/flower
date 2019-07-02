@@ -50,3 +50,18 @@ values('sample.b.id', 1, 'http://codeforces.com/api/user.rating?handle=tanzaku',
 insert into ms_task
     (task_id, exec_order, endpoint, method, extend_parameters, wait_mode)
 values('sample.b.id', 2, 'http://codeforces.com/api/user.rating?handle=chokudai', 'GET', '{}', 'N');
+insert into ms_task
+    (task_id, exec_order, endpoint, method, extend_parameters, wait_mode)
+values('hello', '1', 'http://localhost:8021/hello', 'GET', '{}', 'N');
+
+insert into ms_task
+    (task_id, exec_order, endpoint, method, extend_parameters, wait_mode)
+values('hello', '2', 'http://localhost:8021/param', 'POST', '{"parameters":{"executeHostname":"localhost","fromYM":"201801","toYM": "201905"}}', 'N');
+
+insert into ms_task
+    (task_id, exec_order, endpoint, method, extend_parameters, wait_mode)
+values('hello', '3', 'http://localhost:8021/heavy', 'POST', '{"parameters":{"country":"Japan"}}', 'N');
+
+insert into ms_task
+    (task_id, exec_order, endpoint, method, extend_parameters, wait_mode)
+values('hello', '4', 'http://localhost:8021/hello', 'GET', '{}', 'N');
