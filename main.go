@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"time"
 
@@ -10,17 +11,20 @@ import (
 	"github.com/d-tsuji/flower/repository"
 )
 
-var Concurrency = 3
-var pollingIntervalSecond time.Duration = 10
+var concurrency int
+var pollingIntervalSecond time.Duration
 
 func main() {
+
+	flag.IntVar(&concurrency, "c", 3, "Concurrency (Goroutine count)")
+	flag.DurationVar(&pollingIntervalSecond, "p", 20, "Polling interval")
 
 	// テスト用のHTTPサーバを起動し、リクエストに応じてタスクを登録
 	go mock.RegisterTask()
 
-	taskChannel := make(chan repository.KrTaskStatus, Concurrency)
+	taskChannel := make(chan repository.KrTaskStatus, concurrency)
 
-	for i := 0; i < Concurrency; i++ {
+	for i := 0; i < concurrency; i++ {
 		go app.Run(taskChannel)
 	}
 	for {
