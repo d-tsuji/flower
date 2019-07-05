@@ -27,9 +27,9 @@ func main() {
 	for i := 0; i < concurrency; i++ {
 		go app.Run(taskChannel)
 	}
+
 	for {
-		log.Println("main() watching...")
-		err := app.WatchTask(taskChannel)
+		err := app.WatchTaskLimit(taskChannel, concurrency)
 		if err != nil {
 			log.Fatal(err)
 		}

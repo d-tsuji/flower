@@ -14,7 +14,7 @@ services:
     restart: always
     user: root
     volumes:
-      - ./init:/docker-entrypoint-initdb.d
+      - ./docker/init:/docker-entrypoint-initdb.d
 
   app:
     ports:

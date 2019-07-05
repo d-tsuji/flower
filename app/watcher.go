@@ -6,10 +6,10 @@ import (
 	"github.com/d-tsuji/flower/repository"
 )
 
-func WatchTask(ch chan<- repository.KrTaskStatus) error {
+func WatchTaskLimit(ch chan<- repository.KrTaskStatus, concurrency int) error {
 
 	log.Println("Task Watching...")
-	list, err := repository.SelectExecTarget()
+	list, err := repository.SelectExecTarget(concurrency)
 	if err != nil {
 		log.Fatal("%s", err)
 		return err
@@ -18,8 +18,15 @@ func WatchTask(ch chan<- repository.KrTaskStatus) error {
 	for _, v := range *list {
 		log.Printf("Executable task found. Put channel. %v", v)
 		// 管理テーブルの更新(実行待ち->実行可能)
-		repository.UpdateKrTaskStatus(&repository.Status{"0"}, &repository.Status{"1"}, &v)
+		v.UpdateKrTaskStatus(&repository.Status{repository.WaitExecute}, &repository.Status{repository.Executable})
 		ch <- v
+	}
+	return nil
+}
+
+func WatchTask(ch chan<- repository.KrTaskStatus) error {
+	if err := WatchTaskLimit(ch, 1000); err != nil {
+		return err
 	}
 	return nil
 }

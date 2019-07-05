@@ -1,3 +1,7 @@
+/*
+kr_task_status
+タスクを状態を管理するテーブル
+*/
 DROP TABLE IF EXISTS kr_task_status;
 
 CREATE TABLE kr_task_status
@@ -17,6 +21,10 @@ CREATE TABLE kr_task_status
 
 ---------------------------------------------
 
+/*
+ms_task
+taskIdに応じて実行するタスクを定義するマスタ
+*/
 DROP TABLE IF EXISTS ms_task;
 
 CREATE TABLE ms_task

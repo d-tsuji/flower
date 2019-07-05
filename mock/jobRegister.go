@@ -9,19 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/d-tsuji/flower/queue"
 	"github.com/d-tsuji/flower/repository"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
+// リクエストに応じてタスクをDBに登録する
+func register(w http.ResponseWriter, r *http.Request) {
 	qs := r.URL.Query()
 
-	item := &queue.Item{
+	item := &repository.Item{
 		"",
 		qs.Get("taskId"),
 		"Normal",
 	}
-	res, err := repository.InsertTaskDifinision(item)
+	res, err := repository.InsertTaskDefinition(item)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,18 +37,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Complete registered task. TaskId -> %s.", qs.Get("taskId"))
 }
 
+// テスト用
 func hello(w http.ResponseWriter, r *http.Request) {
 	log.Println("Request received!")
 	time.Sleep(2 * time.Second)
 	fmt.Fprintln(w, "Hello world!")
 }
 
+// テスト用
 func heavy(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(10 * time.Second)
 	log.Println("Heavy Process start.")
 	fmt.Fprintln(w, "Heavy Process finish.")
 }
 
+// テスト用
 func param(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(2 * time.Second)
 	method := r.Method
@@ -73,7 +76,7 @@ func param(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterTask() {
-	http.HandleFunc("/register", handler)
+	http.HandleFunc("/register", register)
 	http.HandleFunc("/hello", hello)
 	http.HandleFunc("/heavy", heavy)
 	http.HandleFunc("/param", param)

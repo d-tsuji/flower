@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/d-tsuji/flower/queue"
 	"github.com/google/uuid"
 
 	_ "github.com/lib/pq"
@@ -14,26 +13,53 @@ import (
 type TaskDifinition struct {
 }
 
-var Conn *sql.DB
-
-func init() {
-	var err error
-	Conn, err = sql.Open("postgres", "user=postgres dbname=dev password=postgres host=db sslmode=disable")
-	if err != nil {
-		panic(err)
-	}
-}
-
 // ms_taskの実行順序から依存関係を決定し、kr_task_statusに実行待ちとして登録する
-func InsertTaskDifinision(item *queue.Item) (sql.Result, error) {
+func InsertTaskDefinition(item *Item) (sql.Result, error) {
 
-	statement :=
-		"INSERT INTO kr_task_status (job_flow_id, task_id, job_exec_seq, job_depend_exec_seq, wait_mode, status, response_body, priority, create_ts, start_ts,  finish_ts)" +
-			"SELECT $1, task_id, exec_order, depend_exec_order, wait_mode, status, '', 0 ,$3, null, null " +
-			"FROM " +
-			"(SELECT task_id, exec_order, lag(exec_order, 1) over(partition by task_id order by exec_order) depend_exec_order, wait_mode, '0' status " +
-			"FROM ms_task t WHERE t.task_id = $2) res"
-	stmt, err := Conn.Prepare(statement)
+	statement := `
+INSERT INTO
+	kr_task_status(
+		job_flow_id
+	,	task_id
+	,	job_exec_seq
+	,	job_depend_exec_seq
+	,	wait_mode
+	,	status
+	,	response_body
+	,	priority
+	,	create_ts
+	,	start_ts
+	, 	finish_ts
+)
+SELECT
+	$1
+	,	task_id
+	,	exec_order
+	,	depend_exec_order
+	,	wait_mode
+	,	status
+	,	'' response_body
+	,	0 priority
+	,	$3 create_ts
+	,	null start_ts
+	,	null finish_ts
+FROM  
+	(
+		SELECT
+			task_id
+		,	exec_order
+		,	lag(exec_order, 1) over(partition by task_id order by exec_order) depend_exec_order
+		,	wait_mode
+		,	'0' status
+		FROM
+			ms_task t
+		WHERE
+			t.task_id = $2
+	) res
+;
+`
+
+	stmt, err := conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -56,13 +82,13 @@ type RestTask struct {
 }
 
 // TaskIDに紐づくタスク一覧を取得する
-func GetExecRestTaskDefinision(item *KrTaskStatus) (*RestTask, error) {
+func (item *KrTaskStatus) GetExecRestTaskDefinition() (*RestTask, error) {
 
 	var endpoint string
 	var method string
 	var extendParameter string
 	query := "select t.endpoint, t.method, t.extend_parameters from ms_task t where t.task_id = $1 and t.exec_order = $2"
-	err := Conn.QueryRow(query, item.TaskId, item.JobExecSeq).Scan(&endpoint, &method, &extendParameter)
+	err := conn.QueryRow(query, item.TaskId, item.JobExecSeq).Scan(&endpoint, &method, &extendParameter)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -81,32 +107,34 @@ type KrTaskStatus struct {
 	ResponseBody string `db:"response_body"`
 }
 
-func SelectExecTarget() (*[]KrTaskStatus, error) {
+func SelectExecTarget(limit int) (*[]KrTaskStatus, error) {
 
 	list := make([]KrTaskStatus, 0)
 	query := `
-		select
-			base.job_flow_id
-		,	base.task_id
-		,	base.job_exec_seq
-		,	coalesce(dep.response_body, '') response_body
-		from
-			kr_task_status base
-		left join
-			kr_task_status dep
-			on	1=1
-				and	base.job_depend_exec_seq = dep.job_exec_seq
-				and	base.task_id = dep.task_id
-				and	base.job_flow_id = dep.job_flow_id
-		where	1=1
-			and	coalesce(dep.status, '3') = '3'
-			and	base.status in ('0')
-		order by
-			base.priority
-		;
+select
+	base.job_flow_id
+,	base.task_id
+,	base.job_exec_seq
+,	coalesce(dep.response_body, '') response_body
+from
+	kr_task_status base
+left join
+	kr_task_status dep
+	on	1=1
+		and	base.job_depend_exec_seq = dep.job_exec_seq
+		and	base.task_id = dep.task_id
+		and	base.job_flow_id = dep.job_flow_id
+where	1=1
+	and	coalesce(dep.status, '3') = '3'
+	and	base.status in ('0')
+order by
+	base.priority
+limit
+	$1
+;
 	`
 
-	stmt, err := Conn.Query(query)
+	stmt, err := conn.Query(query, limit)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -114,20 +142,20 @@ func SelectExecTarget() (*[]KrTaskStatus, error) {
 	defer stmt.Close()
 
 	for stmt.Next() {
-		var job_flow_id string
-		var task_id string
-		var job_exec_seq int64
-		var response_body string
+		var jobFlowId string
+		var taskId string
+		var jobExecSeq int64
+		var responseBody string
 
-		if err := stmt.Scan(&job_flow_id, &task_id, &job_exec_seq, &response_body); err != nil {
+		if err := stmt.Scan(&jobFlowId, &taskId, &jobExecSeq, &responseBody); err != nil {
 			log.Fatal(err)
 			return nil, err
 		}
 		list = append(list, KrTaskStatus{
-			job_flow_id,
-			task_id,
-			job_exec_seq,
-			response_body,
+			jobFlowId,
+			taskId,
+			jobExecSeq,
+			responseBody,
 		})
 	}
 
@@ -138,9 +166,9 @@ type Status struct {
 	S string
 }
 
-func UpdateKrTaskStatus(fromStat *Status, toStat *Status, task *KrTaskStatus) (sql.Result, error) {
+func (task *KrTaskStatus) UpdateKrTaskStatus(fromStat *Status, toStat *Status) (sql.Result, error) {
 	statement := "UPDATE kr_task_status SET status = $1, start_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
-	stmt, err := Conn.Prepare(statement)
+	stmt, err := conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -155,9 +183,9 @@ func UpdateKrTaskStatus(fromStat *Status, toStat *Status, task *KrTaskStatus) (s
 	return cnt, nil
 }
 
-func UpdateCompleteKrTaskStatus(fromStat *Status, toStat *Status, res []byte, task *KrTaskStatus) (sql.Result, error) {
+func (task *KrTaskStatus) UpdateCompleteKrTaskStatus(fromStat *Status, toStat *Status, res []byte) (sql.Result, error) {
 	statement := "UPDATE kr_task_status SET status = $1, finish_ts = $2, response_body = $7 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
-	stmt, err := Conn.Prepare(statement)
+	stmt, err := conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -170,4 +198,14 @@ func UpdateCompleteKrTaskStatus(fromStat *Status, toStat *Status, res []byte, ta
 		return nil, err
 	}
 	return cnt, nil
+}
+
+type Item struct {
+	JobFlowId string // 実行時に発行される一意なフローID(初回はnil)
+	TaskId    string // 実行するタスク群のID
+	TaskType  string // タスク登録 or タスク監視実行
+}
+
+func ItemBuilder() *Item {
+	return &Item{}
 }
