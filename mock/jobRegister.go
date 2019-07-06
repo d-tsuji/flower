@@ -34,7 +34,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "taskId :[%s] is not registered in ms_task. Please Check configuration.", item.TaskId)
 		return
 	}
-	fmt.Fprintf(w, "Complete registered task. TaskId -> %s.", qs.Get("taskId"))
+	fmt.Fprintf(w, "%v : Complete registered task. TaskId -> %s.", time.Now(), qs.Get("taskId"))
 }
 
 // テスト用

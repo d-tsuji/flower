@@ -3,12 +3,16 @@ package app
 import (
 	"log"
 
+	"go.uber.org/zap"
+
 	"github.com/d-tsuji/flower/repository"
 )
 
 func WatchTaskLimit(ch chan<- repository.KrTaskStatus, concurrency int) error {
 
-	log.Println("Task Watching...")
+	logger, _ := zap.NewDevelopment()
+
+	logger.Info("Task Watching.")
 	list, err := repository.SelectExecTarget(concurrency)
 	if err != nil {
 		log.Fatal("%s", err)

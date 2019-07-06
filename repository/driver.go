@@ -1,12 +1,16 @@
 package repository
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
-var conn *sql.DB
+var (
+	conn *sql.DB
+)
 
 func init() {
 	var err error
-	conn, err = sql.Open("postgres", "user=postgres dbname=dev password=postgres host=db sslmode=disable")
+	conn, err = sql.Open("postgres", "user=postgres dbname=dev password=postgres host=localhost sslmode=disable")
 	if err != nil {
 		panic(err)
 	}

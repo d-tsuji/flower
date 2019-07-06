@@ -3,10 +3,14 @@ package app
 import (
 	"log"
 
+	"go.uber.org/zap"
+
 	"github.com/d-tsuji/flower/repository"
 )
 
 func Run(ch chan repository.KrTaskStatus) {
+	logger, _ := zap.NewDevelopment()
+
 	for {
 		v := <-ch
 		log.Printf("Task starting... : %v", v)
@@ -14,14 +18,16 @@ func Run(ch chan repository.KrTaskStatus) {
 		// task_id, job_exec_seq から実行するrestタスクを取得
 		rest, err := v.GetExecRestTaskDefinition()
 		if err != nil {
-			log.Fatal("%s", err)
+			logger.Warn("None get tasks", zap.Error(err))
+			return
 		}
 
 		// 管理テーブルの更新(実行可能->実行中)
 		sqlResult, err := v.UpdateKrTaskStatus(&repository.Status{repository.Executable}, &repository.Status{repository.Running})
 		cnt, err := sqlResult.RowsAffected()
 		if err != nil {
-			log.Fatal(err)
+			logger.Warn("An unexpected error has occurred", zap.Error(err))
+			return
 		}
 		if cnt == 0 {
 			log.Printf("This task still started by other process. %v", v)
@@ -32,9 +38,10 @@ func Run(ch chan repository.KrTaskStatus) {
 		res, err := RestCall(rest)
 		log.Println(string(res))
 		if err != nil {
-			log.Fatal("%s", err)
 			// 管理テーブルの更新(実行中->異常終了)
 			v.UpdateKrTaskStatus(&repository.Status{repository.Running}, &repository.Status{repository.Error})
+			logger.Warn("An unexpected error has occurred", zap.Error(err))
+			return
 		}
 
 		// 管理テーブルの更新(実行中->正常終了)
