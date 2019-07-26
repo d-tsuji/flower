@@ -48,49 +48,32 @@ $ curl http://localhost:8021/register?taskId=hello
 ```
 $ docker-compose logs
 
-app    | 2019/07/02 13:31:58 Task Watching...
-app    | 2019/07/02 13:32:08 Task Watching...
-app    | 2019/07/02 13:32:08 Executable task found. Put channel. {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 1 }
-app    | 2019/07/02 13:32:08 Task starting... : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 1 }
-app    | 2019/07/02 13:32:08 Request received!
-app    | 2019/07/02 13:32:10 Hello world!
+app    | 2019-07-26T07:53:18.507Z       INFO    app/watcher.go:12       Task Watching.
+app    | 2019-07-26T07:53:38.510Z       INFO    app/watcher.go:12       Task Watching.
+app    | 2019-07-26T07:53:38.511Z       INFO    app/watcher.go:20       Executable task found. Put channel. %v
+app    | 2019-07-26T07:53:38.520Z       INFO    app/runner.go:14        Task starting.
+app    | 2019-07-26T07:53:38.567Z       INFO    mock/jobRegister.go:45  Request received!
+app    | 2019-07-26T07:53:40.569Z       INFO    app/runner.go:38
+app    | 2019-07-26T07:53:40.580Z       INFO    app/runner.go:48        Task finished : %v
+app    | 2019-07-26T07:53:40.581Z       INFO    app/watcher.go:12       Task Watching.
+app    | 2019-07-26T07:53:40.583Z       INFO    app/watcher.go:20       Executable task found. Put channel. %v
+app    | 2019-07-26T07:53:40.590Z       INFO    app/runner.go:14        Task starting.
+app    | 2019-07-26T07:53:42.601Z       INFO    app/runner.go:38        {"parameters":{"executeHostname":"localhost","fromYM":"201801","toYM": "201905"}}
 app    |
-app    | 2019/07/02 13:32:10 Task finished : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 1 }
-app    | 2019/07/02 13:32:10 Task Watching...
-app    | 2019/07/02 13:32:10 Executable task found. Put channel. {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 2 Hello world!
-app    | }
-app    | 2019/07/02 13:32:10 Task starting... : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 2 Hello world!
-app    | }
-app    | 2019/07/02 13:32:12 [Method] POST
-app    | 2019/07/02 13:32:12 [Header] User-Agent: Go-http-client/1.1
-app    | 2019/07/02 13:32:12 [Header] Content-Length: 81
-app    | 2019/07/02 13:32:12 [Header] Accept-Encoding: gzip
-app    | 2019/07/02 13:32:12 {"parameters":{"executeHostname":"localhost","fromYM":"201801","toYM": "201905"}}
-app    |
-app    | 2019/07/02 13:32:12 Task finished : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 2 Hello world!
-app    | }
-app    | 2019/07/02 13:32:12 Task Watching...
-app    | 2019/07/02 13:32:12 Executable task found. Put channel. {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 3 {"parameters":{"executeHostname":"localhost","fromYM":"201801","toYM": "201905"}}
-app    | }
-app    | 2019/07/02 13:32:12 Task starting... : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 3 {"parameters":{"executeHostname":"localhost","fromYM":"201801","toYM": "201905"}}
-app    | }
-app    | 2019/07/02 13:32:18 Task Watching...
-app    | 2019/07/02 13:32:22 Heavy Process start.
-app    | 2019/07/02 13:32:22 Heavy Process finish.
-app    |
-app    | 2019/07/02 13:32:22 Task finished : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 3 {"parameters":{"executeHostname":"localhost","fromYM":"201801","toYM": "201905"}}
-app    | }
-app    | 2019/07/02 13:32:22 Task Watching...
-app    | 2019/07/02 13:32:22 Executable task found. Put channel. {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 4 Heavy Process finish.
-app    | }
-app    | 2019/07/02 13:32:22 Task starting... : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 4 Heavy Process finish.
-app    | }
-app    | 2019/07/02 13:32:22 Request received!
-app    | 2019/07/02 13:32:24 Hello world!
-app    |
-app    | 2019/07/02 13:32:24 Task finished : {ff88e3d7-f746-4493-bb64-1573d2eb05c4 hello 4 Heavy Process finish.
-app    | }
-app    | 2019/07/02 13:32:24 Task Watching...
-app    | 2019/07/02 13:32:28 Task Watching...
+app    | 2019-07-26T07:53:42.620Z       INFO    app/runner.go:48        Task finished : %v
+app    | 2019-07-26T07:53:42.620Z       INFO    app/watcher.go:12       Task Watching.
+app    | 2019-07-26T07:53:42.622Z       INFO    app/watcher.go:20       Executable task found. Put channel. %v
+app    | 2019-07-26T07:53:42.636Z       INFO    app/runner.go:14        Task starting.
+app    | 2019-07-26T07:53:52.643Z       INFO    mock/jobRegister.go:54  Heavy Process start.
+app    | 2019-07-26T07:53:52.644Z       INFO    app/runner.go:38
+app    | 2019-07-26T07:53:52.664Z       INFO    app/runner.go:48        Task finished : %v
+app    | 2019-07-26T07:53:52.664Z       INFO    app/watcher.go:12       Task Watching.
+app    | 2019-07-26T07:53:52.666Z       INFO    app/watcher.go:20       Executable task found. Put channel. %v
+app    | 2019-07-26T07:53:52.674Z       INFO    app/runner.go:14        Task starting.
+app    | 2019-07-26T07:53:52.684Z       INFO    mock/jobRegister.go:45  Request received!
+app    | 2019-07-26T07:53:54.686Z       INFO    app/runner.go:38
+app    | 2019-07-26T07:53:54.698Z       INFO    app/runner.go:48        Task finished : %v
+app    | 2019-07-26T07:53:54.698Z       INFO    app/watcher.go:12       Task Watching.
+app    | 2019-07-26T07:53:58.521Z       INFO    app/watcher.go:12       Task Watching.
 
 ```
