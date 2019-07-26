@@ -15,7 +15,7 @@ type Task struct {
 }
 
 func (t *Task) String() string {
-	return fmt.Sprintln(
+	return fmt.Sprintf(
 		"[JobFlowId: %v, JobFlowId: %v, JobFlowId: %v, JobFlowId: %v]",
 		t.JobFlowId,
 		t.TaskId,
@@ -32,7 +32,7 @@ type RestTask struct {
 }
 
 func (t *RestTask) String() string {
-	return fmt.Sprintln(
+	return fmt.Sprintf(
 		"[Endpoint: %v, Method: %v, ExtendParameter: %v]",
 		t.Endpoint,
 		t.Method,
