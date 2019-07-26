@@ -16,8 +16,8 @@ var pollingIntervalSecond time.Duration
 
 func main() {
 
-	flag.IntVar(&concurrency, "c", 3, "Concurrency (Goroutine count)")
-	flag.DurationVar(&pollingIntervalSecond, "p", 20, "Polling interval")
+	flag.IntVar(&concurrency, "c", 3, "Concurrency")
+	flag.DurationVar(&pollingIntervalSecond, "p", 20, "Polling interval second")
 
 	// テスト用のHTTPサーバを起動し、リクエストに応じてタスクを登録
 	go mock.RegisterTask()

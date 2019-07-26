@@ -13,7 +13,7 @@ func Run(ch chan repository.KrTaskStatus) {
 
 	for {
 		v := <-ch
-		log.Printf("Task starting... : %v", v)
+		logger.Info("Task starting.")
 
 		// task_id, job_exec_seq から実行するrestタスクを取得
 		rest, err := v.GetExecRestTaskDefinition()
@@ -23,7 +23,7 @@ func Run(ch chan repository.KrTaskStatus) {
 		}
 
 		// 管理テーブルの更新(実行可能->実行中)
-		sqlResult, err := v.UpdateKrTaskStatus(&repository.Status{repository.Executable}, &repository.Status{repository.Running})
+		sqlResult, err := v.UpdateKrTaskStatus(repository.Executable, repository.Running)
 		cnt, err := sqlResult.RowsAffected()
 		if err != nil {
 			logger.Warn("An unexpected error has occurred", zap.Error(err))
@@ -39,13 +39,13 @@ func Run(ch chan repository.KrTaskStatus) {
 		log.Println(string(res))
 		if err != nil {
 			// 管理テーブルの更新(実行中->異常終了)
-			v.UpdateKrTaskStatus(&repository.Status{repository.Running}, &repository.Status{repository.Error})
+			v.UpdateKrTaskStatus(repository.Running, repository.Error)
 			logger.Warn("An unexpected error has occurred", zap.Error(err))
 			return
 		}
 
 		// 管理テーブルの更新(実行中->正常終了)
-		v.UpdateCompleteKrTaskStatus(&repository.Status{repository.Running}, &repository.Status{repository.Completed}, res)
+		v.UpdateCompleteKrTaskStatus(repository.Running, repository.Completed, res)
 		log.Printf("Task finished : %v", v)
 
 		// 非同期で後続タスクを呼び出す。

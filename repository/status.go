@@ -1,9 +1,11 @@
 package repository
 
+type StatusType string
+
 const (
-	WaitExecute = "0"
-	Executable  = "1"
-	Running     = "2"
-	Completed   = "3"
-	Error       = "9"
+	WaitExecute StatusType = "0"
+	Executable  StatusType = "1"
+	Running     StatusType = "2"
+	Completed   StatusType = "3"
+	Error       StatusType = "9"
 )
