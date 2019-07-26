@@ -79,13 +79,13 @@ type RestTask struct {
 }
 
 // TaskIDに紐づくタスク一覧を取得する
-func (item *Task) GetExecRestTaskDefinition() (*RestTask, error) {
+func (task *Task) GetExecRestTaskDefinition() (*RestTask, error) {
 
 	var endpoint string
 	var method string
 	var extendParameter string
 	query := "select t.endpoint, t.method, t.extend_parameters from ms_task t where t.task_id = $1 and t.exec_order = $2"
-	err := conn.QueryRow(query, item.TaskId, item.JobExecSeq).Scan(&endpoint, &method, &extendParameter)
+	err := conn.QueryRow(query, task.TaskId, task.JobExecSeq).Scan(&endpoint, &method, &extendParameter)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
