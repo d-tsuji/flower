@@ -16,7 +16,7 @@ type Task struct {
 
 func (t *Task) String() string {
 	return fmt.Sprintf(
-		"[JobFlowId: %v, JobFlowId: %v, JobFlowId: %v, JobFlowId: %v]",
+		"[JobFlowId: %v, TaskId: %v, JobExecSeq: %v, ResponseBody: %v]",
 		t.JobFlowId,
 		t.TaskId,
 		t.JobExecSeq,
