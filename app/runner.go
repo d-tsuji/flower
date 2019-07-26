@@ -1,8 +1,6 @@
 package app
 
 import (
-	"log"
-
 	"go.uber.org/zap"
 
 	"github.com/d-tsuji/flower/repository"
@@ -19,7 +17,7 @@ func Run(ch chan repository.Task) {
 		rest, err := v.GetExecRestTaskDefinition()
 		if err != nil {
 			logger.Warn("None get tasks", zap.Error(err))
-			return
+			continue
 		}
 
 		// 管理テーブルの更新(実行可能->実行中)
@@ -27,26 +25,28 @@ func Run(ch chan repository.Task) {
 		cnt, err := sqlResult.RowsAffected()
 		if err != nil {
 			logger.Warn("An unexpected error has occurred", zap.Error(err))
-			return
+			continue
 		}
 		if cnt == 0 {
-			log.Printf("This task still started by other process. %v", v)
+			logger.Warn("This task still started by other process. ")
+			//log.Printf("This task still started by other process. %v", v)
 			continue
 		}
 
 		// rest apiを発行
 		res, err := RestCall(rest)
-		log.Println(string(res))
+		logger.Info(string(res))
 		if err != nil {
 			// 管理テーブルの更新(実行中->異常終了)
 			v.UpdateKrTaskStatus(repository.Running, repository.Error)
 			logger.Warn("An unexpected error has occurred", zap.Error(err))
-			return
+			continue
 		}
 
 		// 管理テーブルの更新(実行中->正常終了)
 		v.UpdateCompleteKrTaskStatus(repository.Running, repository.Completed, res)
-		log.Printf("Task finished : %v", v)
+		logger.Info("Task finished : %v")
+		//logger.Info("Task finished : %v", v)
 
 		// 非同期で後続タスクを呼び出す。
 		// 同期にするとチャネルのバッファがいっぱいのときに呼び出し元のrunner#Runが終了できなくなり、デッドロックになる
