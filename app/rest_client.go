@@ -2,7 +2,6 @@ package app
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
@@ -17,12 +16,12 @@ func RestCall(r *repository.RestTask) ([]byte, error) {
 	client := &http.Client{}
 	request, err := http.NewRequest(r.Method, r.Endpoint, strings.NewReader(r.ExtendParameter))
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("Error request", zap.Error(err))
 		return nil, err
 	}
 	res, err := client.Do(request)
 	if err != nil {
-		logger.Warn("An unexpected error has occurred", zap.Error(err))
+		logger.Error("An unexpected error has occurred", zap.Error(err))
 		return nil, err
 	}
 	defer res.Body.Close()

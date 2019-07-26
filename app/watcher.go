@@ -6,11 +6,11 @@ import (
 	"github.com/d-tsuji/flower/repository"
 )
 
-func WatchTaskLimit(ch chan<- repository.Task, concurrency int) error {
+func WatchTaskLimit(ch chan<- repository.Task, limit int) error {
 	logger, _ := zap.NewDevelopment()
 
 	logger.Info("Task Watching.")
-	list, err := repository.SelectExecTarget(concurrency)
+	list, err := repository.SelectExecTarget(limit)
 	if err != nil {
 		logger.Error("Error getting target tasks", zap.Error(err))
 		return err

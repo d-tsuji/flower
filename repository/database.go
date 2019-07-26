@@ -104,6 +104,7 @@ type Task struct {
 	ResponseBody string `db:"response_body"`
 }
 
+// 依存タスクが完了している実行待ちタスクを取得する
 func SelectExecTarget(limit int) (*[]Task, error) {
 
 	list := make([]Task, 0)
@@ -129,7 +130,7 @@ order by
 limit
 	$1
 ;
-	`
+`
 
 	stmt, err := conn.Query(query, limit)
 	if err != nil {
@@ -160,7 +161,18 @@ limit
 }
 
 func (task *Task) UpdateKrTaskStatus(fromStat StatusType, toStat StatusType) (sql.Result, error) {
-	statement := "UPDATE kr_task_status SET status = $1, start_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
+	statement := `
+UPDATE
+	kr_task_status
+SET
+	status = $1
+,	start_ts = $2
+WHERE
+	job_flow_id = $3
+AND	task_id = $4
+AND	job_exec_seq = $5
+AND	status = $6
+`
 	stmt, err := conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
@@ -177,7 +189,19 @@ func (task *Task) UpdateKrTaskStatus(fromStat StatusType, toStat StatusType) (sq
 }
 
 func (task *Task) UpdateCompleteKrTaskStatus(fromStat StatusType, toStat StatusType, res []byte) (sql.Result, error) {
-	statement := "UPDATE kr_task_status SET status = $1, finish_ts = $2, response_body = $7 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
+	statement := `
+UPDATE
+	kr_task_status
+SET
+	status = $1
+,	finish_ts = $2
+,	response_body = $7
+WHERE
+	job_flow_id = $3
+AND	task_id = $4
+AND	job_exec_seq = $5
+AND	status = $6
+`
 	stmt, err := conn.Prepare(statement)
 	if err != nil {
 		log.Fatal(err)
@@ -197,8 +221,4 @@ type Item struct {
 	JobFlowId string // 実行時に発行される一意なフローID(初回はnil)
 	TaskId    string // 実行するタスク群のID
 	TaskType  string // タスク登録 or タスク監視実行
-}
-
-func ItemBuilder() *Item {
-	return &Item{}
 }
