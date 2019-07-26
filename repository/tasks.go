@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 )
@@ -13,11 +14,30 @@ type Task struct {
 	ResponseBody string `db:"response_body"`
 }
 
+func (t *Task) String() string {
+	return fmt.Sprintln(
+		"[JobFlowId: %v, JobFlowId: %v, JobFlowId: %v, JobFlowId: %v]",
+		t.JobFlowId,
+		t.TaskId,
+		t.JobExecSeq,
+		t.ResponseBody,
+	)
+}
+
 type RestTask struct {
 	Endpoint        string `db:"endpoint"`
 	Method          string `db:"method"`
 	ExtendParameter string `db:"extend_parameters"`
 	// TODO: パラメータなど
+}
+
+func (t *RestTask) String() string {
+	return fmt.Sprintln(
+		"[Endpoint: %v, Method: %v, ExtendParameter: %v]",
+		t.Endpoint,
+		t.Method,
+		t.ExtendParameter,
+	)
 }
 
 // TaskIDに紐づくRestタスク一覧を取得する

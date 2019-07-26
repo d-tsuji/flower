@@ -17,7 +17,7 @@ func WatchTaskLimit(ch chan<- repository.Task, limit int) error {
 	}
 
 	for _, v := range *list {
-		logger.Info("Executable task found. Put channel. %v")
+		logger.Info("Executable task found. Put channel. " + v.String())
 		// 管理テーブルの更新(実行待ち->実行可能)
 		v.UpdateKrTaskStatus(repository.WaitExecute, repository.Executable)
 		ch <- v

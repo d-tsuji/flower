@@ -75,7 +75,7 @@ func param(w http.ResponseWriter, r *http.Request) {
 
 		decoded, error := url.QueryUnescape(string(body))
 		if error != nil {
-			logger.Fatal("Error decode body", zap.Error(error))
+			logger.Error("Error decode body", zap.Error(error))
 		}
 		fmt.Fprintln(w, decoded)
 	}

@@ -28,7 +28,7 @@ func Run(ch chan repository.Task) {
 			continue
 		}
 		if cnt == 0 {
-			logger.Warn("This task still started by other process. ")
+			logger.Warn("This task still started by other process. " + v.String())
 			//log.Printf("This task still started by other process. %v", v)
 			continue
 		}
@@ -45,7 +45,7 @@ func Run(ch chan repository.Task) {
 
 		// 管理テーブルの更新(実行中->正常終了)
 		v.UpdateCompleteKrTaskStatus(repository.Running, repository.Completed, res)
-		logger.Info("Task finished : %v")
+		logger.Info("Task finished.")
 		//logger.Info("Task finished : %v", v)
 
 		// 非同期で後続タスクを呼び出す。
