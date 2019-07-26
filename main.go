@@ -22,7 +22,7 @@ func main() {
 	// テスト用のHTTPサーバを起動し、リクエストに応じてタスクを登録
 	go mock.RegisterTask()
 
-	taskChannel := make(chan repository.KrTaskStatus, concurrency)
+	taskChannel := make(chan repository.Task, concurrency)
 
 	for i := 0; i < concurrency; i++ {
 		go app.Run(taskChannel)

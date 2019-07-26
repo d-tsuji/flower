@@ -8,7 +8,7 @@ import (
 	"github.com/d-tsuji/flower/repository"
 )
 
-func WatchTaskLimit(ch chan<- repository.KrTaskStatus, concurrency int) error {
+func WatchTaskLimit(ch chan<- repository.Task, concurrency int) error {
 
 	logger, _ := zap.NewDevelopment()
 
@@ -28,7 +28,7 @@ func WatchTaskLimit(ch chan<- repository.KrTaskStatus, concurrency int) error {
 	return nil
 }
 
-func WatchTask(ch chan<- repository.KrTaskStatus) error {
+func WatchTask(ch chan<- repository.Task) error {
 	if err := WatchTaskLimit(ch, 1000); err != nil {
 		return err
 	}

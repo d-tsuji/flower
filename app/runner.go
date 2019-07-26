@@ -8,7 +8,7 @@ import (
 	"github.com/d-tsuji/flower/repository"
 )
 
-func Run(ch chan repository.KrTaskStatus) {
+func Run(ch chan repository.Task) {
 	logger, _ := zap.NewDevelopment()
 
 	for {

@@ -79,7 +79,7 @@ type RestTask struct {
 }
 
 // TaskIDに紐づくタスク一覧を取得する
-func (item *KrTaskStatus) GetExecRestTaskDefinition() (*RestTask, error) {
+func (item *Task) GetExecRestTaskDefinition() (*RestTask, error) {
 
 	var endpoint string
 	var method string
@@ -97,16 +97,16 @@ func (item *KrTaskStatus) GetExecRestTaskDefinition() (*RestTask, error) {
 	}, nil
 }
 
-type KrTaskStatus struct {
+type Task struct {
 	JobFlowId    string `db:"job_flow_id"`
 	TaskId       string `db:"task_id"`
 	JobExecSeq   int64  `db:"job_exec_seq"`
 	ResponseBody string `db:"response_body"`
 }
 
-func SelectExecTarget(limit int) (*[]KrTaskStatus, error) {
+func SelectExecTarget(limit int) (*[]Task, error) {
 
-	list := make([]KrTaskStatus, 0)
+	list := make([]Task, 0)
 	query := `
 select
 	base.job_flow_id
@@ -148,7 +148,7 @@ limit
 			log.Fatal(err)
 			return nil, err
 		}
-		list = append(list, KrTaskStatus{
+		list = append(list, Task{
 			jobFlowId,
 			taskId,
 			jobExecSeq,
@@ -159,7 +159,7 @@ limit
 	return &list, nil
 }
 
-func (task *KrTaskStatus) UpdateKrTaskStatus(fromStat StatusType, toStat StatusType) (sql.Result, error) {
+func (task *Task) UpdateKrTaskStatus(fromStat StatusType, toStat StatusType) (sql.Result, error) {
 	statement := "UPDATE kr_task_status SET status = $1, start_ts = $2 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
 	stmt, err := conn.Prepare(statement)
 	if err != nil {
@@ -176,7 +176,7 @@ func (task *KrTaskStatus) UpdateKrTaskStatus(fromStat StatusType, toStat StatusT
 	return cnt, nil
 }
 
-func (task *KrTaskStatus) UpdateCompleteKrTaskStatus(fromStat StatusType, toStat StatusType, res []byte) (sql.Result, error) {
+func (task *Task) UpdateCompleteKrTaskStatus(fromStat StatusType, toStat StatusType, res []byte) (sql.Result, error) {
 	statement := "UPDATE kr_task_status SET status = $1, finish_ts = $2, response_body = $7 WHERE job_flow_id = $3 AND task_id = $4 AND job_exec_seq = $5 AND status = $6"
 	stmt, err := conn.Prepare(statement)
 	if err != nil {
