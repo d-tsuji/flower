@@ -18,7 +18,7 @@ func register(w http.ResponseWriter, r *http.Request) {
 
 	qs := r.URL.Query()
 
-	item := &repository.Item{
+	item := &repository.Job{
 		JobFlowId: "",
 		TaskId:    qs.Get("taskId"),
 		TaskType:  "Normal",
@@ -44,7 +44,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewDevelopment()
 	logger.Info("Request received!")
 	time.Sleep(2 * time.Second)
-	fmt.Fprintln(w, "Hello world!")
+	//fmt.Fprintln(w, "Hello world!")
 }
 
 // テスト用
@@ -52,7 +52,7 @@ func heavy(w http.ResponseWriter, r *http.Request) {
 	logger, _ := zap.NewDevelopment()
 	time.Sleep(10 * time.Second)
 	logger.Info("Heavy Process start.")
-	fmt.Fprintln(w, "Heavy Process finish.")
+	//fmt.Fprintln(w, "Heavy Process finish.")
 }
 
 // テスト用

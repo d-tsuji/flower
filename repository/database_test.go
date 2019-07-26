@@ -8,7 +8,7 @@ import (
 func TestInsertTaskDifinision(t *testing.T) {
 	truncateTable()
 
-	item := &Item{
+	item := &Job{
 		"",
 		"sample.a.id",
 		"Normal",
@@ -17,7 +17,7 @@ func TestInsertTaskDifinision(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	item = &Item{
+	item = &Job{
 		"",
 		"sample.b.id",
 		"Normal",
