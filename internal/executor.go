@@ -2,19 +2,23 @@ package internal
 
 import "fmt"
 
-type Executor struct{}
+type executor struct{}
 
-func (e *Executor) Test1() error {
+func NewExecutor() *executor {
+	return &executor{}
+}
+
+func (e *executor) Test1() error {
 	fmt.Println("echo Test1")
 	return nil
 }
 
-func (e *Executor) Test2() error {
+func (e *executor) Test2() error {
 	fmt.Println("echo Test2")
 	return nil
 }
 
-func (e *Executor) Test3() error {
+func (e *executor) Test3() error {
 	fmt.Println("echo Test3")
 	return nil
 }
