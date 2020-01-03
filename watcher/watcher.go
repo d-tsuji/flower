@@ -44,7 +44,7 @@ func (w *watcherTask) WatchTask(ctx context.Context) error {
 
 	var runTasks []db.ExecutableTask
 	for _, wt := range waitingTasks {
-		ok, err := w.db.UpdateExecutableTasksRunning(wt)
+		ok, err := w.db.UpdateExecutableTasksRunning(ctx, wt)
 		if err != nil {
 			return errors.WithStack(err)
 		}

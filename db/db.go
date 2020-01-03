@@ -92,10 +92,10 @@ type task struct {
 	TaskPriority int    `db:"task_priority"`
 }
 
-func (db *DB) getRegisterTask(taskId string) ([]task, error) {
+func (db *DB) getRegisterTask(ctx context.Context, taskId string) ([]task, error) {
 	var tasks []task
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	rows, err := db.QueryContext(ctx, `SELECT task_id, task_seq, program, task_priority FROM ms_task_definition WHERE task_id = $1`, taskId)
 	if err != nil {
@@ -184,11 +184,11 @@ func (db *DB) GetExecutableTask(ctx context.Context) ([]ExecutableTask, error) {
 	return tasks, nil
 }
 
-func (db *DB) InsertExecutableTasks(taskId string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	tasks, err := db.getRegisterTask(taskId)
+	tasks, err := db.getRegisterTask(ctx, taskId)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -241,23 +241,23 @@ func (db *DB) InsertExecutableTasks(taskId string) error {
 	return nil
 }
 
-func (db *DB) UpdateExecutableTasksRunning(e ExecutableTask) (bool, error) {
-	return db.updateExecutableTasks(e, ExecStatusWait, ExecStatusRunning)
+func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e ExecutableTask) (bool, error) {
+	return db.updateExecutableTasks(ctx, e, ExecStatusWait, ExecStatusRunning)
 }
 
-func (db *DB) UpdateExecutableTasksFinished(e ExecutableTask) (bool, error) {
-	return db.updateExecutableTasks(e, ExecStatusRunning, ExecStatusFinish)
+func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTask) (bool, error) {
+	return db.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusFinish)
 }
 
-func (db *DB) UpdateExecutableTasksSuspended(e ExecutableTask) (bool, error) {
-	return db.updateExecutableTasks(e, ExecStatusRunning, ExecStatusSuspend)
+func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e ExecutableTask) (bool, error) {
+	return db.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusSuspend)
 }
 
 // UpdateExecutableTasks updates task status with an optimistic lock.
 // It is not an error if the record has already been updated,
 // but returns false as the first argument of the return value.
-func (db *DB) updateExecutableTasks(e ExecutableTask, beforeTaskStatus, afterTaskStatus int) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
 	tx, err := db.BeginTx(ctx, nil)
@@ -286,10 +286,10 @@ func (db *DB) updateExecutableTasks(e ExecutableTask, beforeTaskStatus, afterTas
 	return true, nil
 }
 
-func (db *DB) GetTaskProgramName(task ExecutableTask) (string, error) {
+func (db *DB) GetTaskProgramName(ctx context.Context, task ExecutableTask) (string, error) {
 	var programName string
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	rows, err := db.QueryContext(ctx, `SELECT program FROM ms_task_definition WHERE task_id = $1 AND task_seq = $2`, task.TaskId, task.TaskSeq)
 	if err != nil {

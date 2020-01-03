@@ -1,6 +1,7 @@
 package register
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -59,7 +60,8 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.db.InsertExecutableTasks(payload.TaskId); err != nil {
+	ctx := context.Background()
+	if err := s.db.InsertExecutableTasks(ctx, payload.TaskId); err != nil {
 		fmt.Printf("%+v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

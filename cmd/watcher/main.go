@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("postgres initialize error: %v\n", err))
 	}
-	collector := watcher.StartDispatcher(WORKER_COUNT, dbClient) // start up worker pool
+	collector := watcher.StartDispatcher(ctx, WORKER_COUNT, dbClient) // start up worker pool
 
 	w := watcher.NewWatcherTask(dbClient, make(chan db.ExecutableTask))
 	tic := time.NewTicker(POLLING_INTERVAL_SECOND * time.Second)

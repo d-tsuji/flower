@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -17,7 +18,7 @@ type Worker struct {
 }
 
 // start worker
-func (w *Worker) Start() {
+func (w *Worker) Start(ctx context.Context) {
 	go func() {
 		for {
 			// when the worker is available place channel in queue
@@ -25,7 +26,7 @@ func (w *Worker) Start() {
 			select {
 			case job := <-w.Channel:
 				r := runner.NewRunner(job, w.DBClient)
-				if err := r.Run(); err != nil {
+				if err := r.Run(ctx); err != nil {
 					fmt.Printf("runner.Run() is failed. err: %v\n", err)
 				}
 			case <-w.End:

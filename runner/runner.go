@@ -1,11 +1,12 @@
 package runner
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
 	"github.com/d-tsuji/flower-v2/db"
-	"github.com/d-tsuji/flower-v2/internal"
+	internal "github.com/d-tsuji/flower-v2/internal"
 	"github.com/pkg/errors"
 )
 
@@ -21,26 +22,26 @@ func NewRunner(task db.ExecutableTask, db *db.DB) *runner {
 	}
 }
 
-func (r *runner) Run() error {
+func (r *runner) Run(ctx context.Context) error {
 	// TODO: handle response params
-	_, err := r.runTask()
+	_, err := r.runTask(ctx)
 	if err != nil {
-		if _, err := r.db.UpdateExecutableTasksSuspended(r.task); err != nil {
+		if _, err := r.db.UpdateExecutableTasksSuspended(ctx, r.task); err != nil {
 			return errors.WithStack(err)
 		}
 		return errors.WithStack(err)
 	}
 
-	if _, err = r.db.UpdateExecutableTasksFinished(r.task); err != nil {
+	if _, err = r.db.UpdateExecutableTasksFinished(ctx, r.task); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
 }
 
-func (r *runner) runTask() ([]reflect.Value, error) {
+func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
 	fmt.Printf("runTask executing.\n")
 
-	programName, err := r.db.GetTaskProgramName(r.task)
+	programName, err := r.db.GetTaskProgramName(ctx, r.task)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

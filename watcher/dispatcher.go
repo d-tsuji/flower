@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/d-tsuji/flower-v2/db"
@@ -13,7 +14,7 @@ type Collector struct {
 	End  chan bool
 }
 
-func StartDispatcher(workerCount int, dbClient *db.DB) Collector {
+func StartDispatcher(ctx context.Context, workerCount int, dbClient *db.DB) Collector {
 	var i int
 	var workers []Worker
 	input := make(chan db.ExecutableTask) // channel to recieve work
@@ -30,7 +31,7 @@ func StartDispatcher(workerCount int, dbClient *db.DB) Collector {
 			End:           make(chan bool),
 			DBClient:      dbClient,
 		}
-		worker.Start()
+		worker.Start(ctx)
 		workers = append(workers, worker) // store worker
 	}
 
