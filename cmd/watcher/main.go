@@ -38,11 +38,18 @@ func main() {
 				if err := w.WatchTask(ctx); err != nil {
 					fmt.Printf("watcher task error: %+v\n", err)
 				}
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
 
-	for t := range w.ExecTaskCh {
-		collector.Work <- t
+	for {
+		select {
+		case t := <-w.ExecTaskCh:
+			collector.Work <- t
+		case <-ctx.Done():
+			return
+		}
 	}
 }
