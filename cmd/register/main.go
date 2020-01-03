@@ -9,11 +9,12 @@ import (
 )
 
 func main() {
-	db, err := db.New(&db.Opt{Password: "flower"})
+	dbClient, err := db.New(&db.Opt{Password: "flower"})
+	defer dbClient.Close()
 	if err != nil {
 		log.Printf("postgres initialize error: %v\n", err)
 	}
-	s := register.NewServer(db)
+	s := register.NewServer(dbClient)
 	http.HandleFunc("/", s.ServeHTTP)
 	address := "0.0.0.0:8000"
 	log.Println("Starting server on address", address)

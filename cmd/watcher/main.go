@@ -21,19 +21,23 @@ func main() {
 	defer cancel()
 
 	dbClient, err := db.New(&db.Opt{Password: "flower"})
+	defer dbClient.Close()
 	if err != nil {
 		log.Fatal(fmt.Sprintf("postgres initialize error: %v\n", err))
 	}
 	collector := watcher.StartDispatcher(WORKER_COUNT, dbClient) // start up worker pool
 
 	w := watcher.NewWatcherTask(dbClient, make(chan db.ExecutableTask))
+	tic := time.NewTicker(POLLING_INTERVAL_SECOND * time.Second)
 	go func() {
 		for {
-			fmt.Println("Start watcher query.")
-			if err := w.WatchTask(ctx); err != nil {
-				fmt.Printf("watcher task error: %+v\n", err)
+			select {
+			case <-tic.C:
+				fmt.Println("watching task...")
+				if err := w.WatchTask(ctx); err != nil {
+					fmt.Printf("watcher task error: %+v\n", err)
+				}
 			}
-			time.Sleep(POLLING_INTERVAL_SECOND * time.Second)
 		}
 	}()
 
