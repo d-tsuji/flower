@@ -19,7 +19,7 @@ const (
 	// DefaultDBUserName is the default postgres user name.
 	DefaultDBUserName = "flower"
 	// DefaultDBHostname is the default postgres host name.
-	DefaultDBHostname = "localhost"
+	DefaultDBHostname = "db"
 	// DefaultDBPort is the default postgres port.
 	DefaultDBPort = "5432"
 	// ConnectTimeout is the default timeout of the connection to the postgres server.
