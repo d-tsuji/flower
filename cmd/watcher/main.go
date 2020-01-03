@@ -25,7 +25,8 @@ func main() {
 	if err != nil {
 		log.Fatal(fmt.Sprintf("postgres initialize error: %v\n", err))
 	}
-	collector := watcher.StartDispatcher(ctx, WORKER_COUNT, dbClient) // start up worker pool
+	// start up worker pool
+	collector := watcher.StartDispatcher(ctx, WORKER_COUNT, dbClient)
 
 	w := watcher.NewWatcherTask(dbClient, make(chan db.ExecutableTask))
 	tic := time.NewTicker(POLLING_INTERVAL_SECOND * time.Second)
@@ -33,7 +34,7 @@ func main() {
 		for {
 			select {
 			case <-tic.C:
-				fmt.Println("watching task...")
+				fmt.Printf("watching task...\n")
 				if err := w.WatchTask(ctx); err != nil {
 					fmt.Printf("watcher task error: %+v\n", err)
 				}

@@ -13,7 +13,6 @@ type Worker struct {
 	ID            int
 	WorkerChannel chan chan db.ExecutableTask
 	Channel       chan db.ExecutableTask
-	End           chan bool
 	DBClient      *db.DB
 }
 
@@ -29,7 +28,7 @@ func (w *Worker) Start(ctx context.Context) {
 				if err := r.Run(ctx); err != nil {
 					fmt.Printf("runner.Run() is failed. err: %v\n", err)
 				}
-			case <-w.End:
+			case <-ctx.Done():
 				return
 			}
 		}

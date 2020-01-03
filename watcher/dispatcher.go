@@ -11,15 +11,13 @@ var WorkerChannel = make(chan chan db.ExecutableTask)
 
 type Collector struct {
 	Work chan db.ExecutableTask
-	End  chan bool
 }
 
 func StartDispatcher(ctx context.Context, workerCount int, dbClient *db.DB) Collector {
 	var i int
 	var workers []Worker
-	input := make(chan db.ExecutableTask) // channel to recieve work
-	end := make(chan bool)                // channel to spin down workers
-	collector := Collector{Work: input, End: end}
+	input := make(chan db.ExecutableTask)
+	collector := Collector{Work: input}
 
 	for i < workerCount {
 		i++
@@ -28,25 +26,24 @@ func StartDispatcher(ctx context.Context, workerCount int, dbClient *db.DB) Coll
 			ID:            i,
 			Channel:       make(chan db.ExecutableTask),
 			WorkerChannel: WorkerChannel,
-			End:           make(chan bool),
 			DBClient:      dbClient,
 		}
 		worker.Start(ctx)
-		workers = append(workers, worker) // store worker
+		workers = append(workers, worker)
 	}
 
 	// start collector
 	go func() {
 		for {
 			select {
-			case <-end:
+			case <-ctx.Done():
 				for _, w := range workers {
-					w.Stop() // stop worker
+					w.Stop()
 				}
 				return
 			case work := <-input:
-				worker := <-WorkerChannel // wait for available channel
-				worker <- work            // dispatch work to worker
+				worker := <-WorkerChannel
+				worker <- work
 			}
 		}
 	}()
