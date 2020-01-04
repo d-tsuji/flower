@@ -31,7 +31,7 @@ services:
     build:
       context: .
       dockerfile: assets/dockerfiles/register/Dockerfile
-    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./register", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower"]
+    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./register", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower", "-webhost", "0.0.0.0", "-webport", "8000"]
 
   watcher:
     image: watcher:latest

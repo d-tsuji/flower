@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -15,6 +16,8 @@ func main() {
 	dbhost := flag.String("dbhost", "", "postgres host")
 	dbport := flag.String("dbport", "", "postgres port")
 	dbname := flag.String("dbname", "", "postgres database name")
+	webhost := flag.String("webhost", "localhost", "web server host")
+	webport := flag.String("webport", "8000", "web server port")
 	flag.Parse()
 
 	dbClient, err := db.New(&db.Opt{
@@ -30,7 +33,7 @@ func main() {
 	}
 	s := register.NewServer(dbClient)
 	http.HandleFunc("/", s.ServeHTTP)
-	address := "0.0.0.0:8000"
+	address := fmt.Sprintf("%s:%s", *webhost, *webport)
 	log.Printf("[register] starting server on address: %s\n", address)
 	err = http.ListenAndServe(address, nil)
 	if err != nil {
