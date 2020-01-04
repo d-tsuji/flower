@@ -1,4 +1,4 @@
-# flower [![Go Report Card](https://goreportcard.com/badge/github.com/d-tsuji/flower)](https://goreportcard.com/report/github.com/d-tsuji/flower) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+# flower [![Go Report Card](https://goreportcard.com/badge/github.com/d-tsuji/flower)](https://goreportcard.com/report/github.com/d-tsuji/flower) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg) [![Actions Status](https://github.com/d-tsuji/flower/workflows/build/badge.svg)](https://github.com/d-tsuji/flower/actions)
 
 Flower is a workflow engine. Manages the execution of a series of tasks that make up a workflow. It manages the status of a series of tasks to be executed, and has a mechanism to quickly find a recovery point in the event of an error. Similarly, it has a mechanism that makes recovery such as reruns easy. Supports parallel execution of tasks and flow control by worker pool.
 
