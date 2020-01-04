@@ -1,27 +1,44 @@
-version: '3'
+version: '3.7'
 
 services:
 
   db:
-    image: postgres
+    image: postgres:11.6
     ports:
       - 5432:5432
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=dev
+      - POSTGRES_USER=flower
+      - POSTGRES_DB=flower
     tty: true
     restart: always
-    user: root
+    user: postgres
     volumes:
-      - ./docker/init:/docker-entrypoint-initdb.d
+      - ./assets/schema:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flower"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
 
-  app:
+  register:
+    image: register:latest
     ports:
-      - 8021:8021
-    container_name: app
+      - 8000:8000
+    container_name: register
     depends_on:
       - db
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: assets/dockerfiles/register/Dockerfile
+    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./register", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower", "-webhost", "0.0.0.0", "-webport", "8000"]
+
+  watcher:
+    image: watcher:latest
+    container_name: watcher
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: assets/dockerfiles/watcher/Dockerfile
+    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./watcher", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower"]
