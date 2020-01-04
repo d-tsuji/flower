@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/d-tsuji/flower-v2/db"
-	internal "github.com/d-tsuji/flower-v2/internal"
 	"github.com/pkg/errors"
 )
 
@@ -46,7 +45,7 @@ func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	executor := internal.NewExecutor()
+	executor := NewExecutor()
 	method := reflect.ValueOf(executor).MethodByName(programName)
 	in := make([]reflect.Value, 0)
 	values := method.Call(in)
