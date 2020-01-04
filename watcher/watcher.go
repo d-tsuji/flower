@@ -9,23 +9,14 @@ import (
 )
 
 type watcherTask struct {
-	pollingIntervalSecond time.Duration
-	concurrency           int
-	db                    *db.DB
-	ExecTaskCh            chan db.ExecutableTask
+	db         *db.DB
+	ExecTaskCh chan db.ExecutableTask
 }
-
-const (
-	defaultPollingInterval = 10
-	defaultConcurrency     = 1
-)
 
 func NewWatcherTask(db *db.DB, execTaskCh chan db.ExecutableTask) *watcherTask {
 	return &watcherTask{
-		pollingIntervalSecond: defaultPollingInterval,
-		concurrency:           defaultConcurrency,
-		db:                    db,
-		ExecTaskCh:            execTaskCh,
+		db:         db,
+		ExecTaskCh: execTaskCh,
 	}
 }
 

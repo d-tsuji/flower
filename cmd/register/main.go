@@ -31,7 +31,7 @@ func main() {
 	s := register.NewServer(dbClient)
 	http.HandleFunc("/", s.ServeHTTP)
 	address := "0.0.0.0:8000"
-	log.Printf("[register] Starting server on address: %s\n", address)
+	log.Printf("[register] starting server on address: %s\n", address)
 	err = http.ListenAndServe(address, nil)
 	if err != nil {
 		panic(err)
