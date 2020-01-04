@@ -9,11 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+//　Runner is a struct for executing tasks
 type runner struct {
 	task db.ExecutableTask
 	db   *db.DB
 }
 
+// NewServer creates a new Runner.
 func NewRunner(task db.ExecutableTask, db *db.DB) *runner {
 	return &runner{
 		task: task,
@@ -21,6 +23,7 @@ func NewRunner(task db.ExecutableTask, db *db.DB) *runner {
 	}
 }
 
+// Run calls runTask. Update the status of the task according to the result.
 func (r *runner) Run(ctx context.Context) error {
 	// TODO: handle response params
 	_, err := r.runTask(ctx)
@@ -37,6 +40,8 @@ func (r *runner) Run(ctx context.Context) error {
 	return nil
 }
 
+// RunTask method calls the program registered
+// in the master of the task definition using reflect.
 func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
 	log.Printf("[runner] runTask executing...\n")
 

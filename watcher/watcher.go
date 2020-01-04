@@ -8,11 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// watcherTask contains the channel of the task being watched.
 type watcherTask struct {
 	db         *db.DB
 	ExecTaskCh chan db.ExecutableTask
 }
 
+// NewWatcherTask creates a new watcherTask.
 func NewWatcherTask(db *db.DB, execTaskCh chan db.ExecutableTask) *watcherTask {
 	return &watcherTask{
 		db:         db,

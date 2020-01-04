@@ -92,6 +92,7 @@ type task struct {
 	TaskPriority int    `db:"task_priority"`
 }
 
+// GetRegisterTask gets a series of tasks registered in the master from taskId.
 func (db *DB) getRegisterTask(ctx context.Context, taskId string) ([]task, error) {
 	var tasks []task
 
@@ -126,6 +127,7 @@ func (db *DB) getRegisterTask(ctx context.Context, taskId string) ([]task, error
 	return tasks, nil
 }
 
+// ExecutableTask is the struct of executable tasks.
 type ExecutableTask struct {
 	TaskFlowId  string `db:"task_flow_id"`
 	TaskExecSeq int    `db:"task_exec_seq"`
@@ -133,6 +135,12 @@ type ExecutableTask struct {
 	TaskSeq     int    `db:"task_seq"`
 }
 
+// GetExecutableTask is the main method.
+// From the series of tasks waiting to be registered for each task flow Id,
+// resolve the dependency of the execution order.
+// Get the executable task and register the task to be executed in the channel to run task.
+//
+// TODO: Add flow control when getting.
 func (db *DB) GetExecutableTask(ctx context.Context) ([]ExecutableTask, error) {
 	var tasks []ExecutableTask
 
@@ -184,6 +192,7 @@ func (db *DB) GetExecutableTask(ctx context.Context) ([]ExecutableTask, error) {
 	return tasks, nil
 }
 
+// InsertExecutableTasks registers the task waiting to be executed from the called taskId.
 func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
@@ -241,14 +250,17 @@ func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
 	return nil
 }
 
+// UpdateExecutableTasksRunning updates task status to running.
 func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e ExecutableTask) (bool, error) {
 	return db.updateExecutableTasks(ctx, e, ExecStatusWait, ExecStatusRunning)
 }
 
+// UpdateExecutableTasksRunning updates the status of tasks to finished.
 func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTask) (bool, error) {
 	return db.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusFinish)
 }
 
+// UpdateExecutableTasksRunning updates the status of a task to suspended.
 func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e ExecutableTask) (bool, error) {
 	return db.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusSuspend)
 }
@@ -286,6 +298,7 @@ func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, befor
 	return true, nil
 }
 
+// GetTaskProgramName gets the name of the program to be executed from taskId and taskSeq.
 func (db *DB) GetTaskProgramName(ctx context.Context, task ExecutableTask) (string, error) {
 	var programName string
 
