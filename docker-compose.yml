@@ -3,7 +3,7 @@ version: '3.7'
 services:
 
   db:
-    image: postgres:11
+    image: postgres:11.6
     ports:
       - 5432:5432
     environment:
@@ -31,6 +31,7 @@ services:
     build:
       context: .
       dockerfile: assets/dockerfiles/register/Dockerfile
+    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./register", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower"]
 
   watcher:
     image: watcher:latest
@@ -40,3 +41,4 @@ services:
     build:
       context: .
       dockerfile: assets/dockerfiles/watcher/Dockerfile
+    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./watcher", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower"]

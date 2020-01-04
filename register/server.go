@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/d-tsuji/flower-v2/db"
@@ -87,4 +88,5 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("content-type", "application/json")
 	w.Write(output)
+	log.Printf("[register] task registered. taskId: %s\n", payload.TaskId)
 }

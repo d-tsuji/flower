@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
@@ -9,7 +10,20 @@ import (
 )
 
 func main() {
-	dbClient, err := db.New(&db.Opt{Password: "flower"})
+	dbuser := flag.String("dbuser", "", "postgres user")
+	dbpass := flag.String("dbpass", "", "postgres user password")
+	dbhost := flag.String("dbhost", "", "postgres host")
+	dbport := flag.String("dbport", "", "postgres port")
+	dbname := flag.String("dbname", "", "postgres database name")
+	flag.Parse()
+
+	dbClient, err := db.New(&db.Opt{
+		DBName:   *dbname,
+		User:     *dbuser,
+		Password: *dbpass,
+		Host:     *dbhost,
+		Port:     *dbport,
+	})
 	defer dbClient.Close()
 	if err != nil {
 		log.Printf("[register] postgres initialize error: %v\n", err)

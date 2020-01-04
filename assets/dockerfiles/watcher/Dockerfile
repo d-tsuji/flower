@@ -1,4 +1,6 @@
-# Build Stage
+############################################################
+# Step.1 Build Stage
+############################################################
 FROM golang:1.13 AS builder
 ENV REPOSITORY github.com/d-tsuji/flower-v2
 ENV GO111MODULE=on
@@ -9,7 +11,9 @@ ADD . $GOPATH/src/$REPOSITORY
 WORKDIR $GOPATH/src/$REPOSITORY
 RUN go build -ldflags '-s -w' -a -installsuffix cgo -o /watcher cmd/watcher/main.go
 
-# Runtime Stage
+############################################################
+# Step.2 Runtime Stage
+############################################################
 FROM alpine:3.11.2
 RUN apk add --no-cache ca-certificates
 
@@ -20,4 +24,3 @@ RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSI
     && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
 COPY --from=builder /watcher .
-CMD ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./watcher", "--host", "0.0.0.0"]
