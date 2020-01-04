@@ -13,6 +13,7 @@ import (
 
 const (
 	WORKER_COUNT            = 5
+	DB_CONCURRENCY          = WORKER_COUNT
 	POLLING_INTERVAL_SECOND = 5
 )
 
@@ -48,7 +49,7 @@ func main() {
 			select {
 			case <-tic.C:
 				log.Printf("[watcher] watching task...\n")
-				if err := w.WatchTask(ctx); err != nil {
+				if err := w.WatchTask(ctx, DB_CONCURRENCY); err != nil {
 					log.Printf("[watcher] watcher task error: %+v\n", err)
 				}
 			case <-ctx.Done():

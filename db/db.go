@@ -139,9 +139,7 @@ type ExecutableTask struct {
 // From the series of tasks waiting to be registered for each task flow Id,
 // resolve the dependency of the execution order.
 // Get the executable task and register the task to be executed in the channel to run task.
-//
-// TODO: Add flow control when getting.
-func (db *DB) GetExecutableTask(ctx context.Context) ([]ExecutableTask, error) {
+func (db *DB) GetExecutableTask(ctx context.Context, concurrency int) ([]ExecutableTask, error) {
 	var tasks []ExecutableTask
 
 	rows, err := db.QueryContext(ctx, `
@@ -151,19 +149,27 @@ func (db *DB) GetExecutableTask(ctx context.Context) ([]ExecutableTask, error) {
 		,	base.task_id
 		,	base.task_seq
 		FROM
-			kr_task_stat base
-		LEFT JOIN
-			kr_task_stat dep
-			ON	1=1
-				AND	base.depends_task_exec_seq = dep.task_exec_seq
-				AND	base.task_id = dep.task_id
-				AND	base.task_flow_id = dep.task_flow_id
-		WHERE	1=1
-			AND	COALESCE(dep.exec_status, '3') = '3' --依存するタスクが完了しているタスク
-			AND	base.exec_status IN ('0')            --実行待ちのタスク
-		ORDER BY
-			base.task_priority
-		`)
+			(
+				SELECT
+					base.task_flow_id
+				,	base.task_exec_seq
+				,	base.task_id
+				,	base.task_seq
+				,	base.exec_status
+				,	ROW_NUMBER() OVER (ORDER BY base.exec_status DESC, base.task_exec_seq, base.task_priority) rowno
+				FROM
+					kr_task_stat base
+				LEFT JOIN
+					kr_task_stat dep
+					ON	1=1
+						AND	base.depends_task_exec_seq = dep.task_exec_seq
+						AND	base.task_id = dep.task_id
+						AND	base.task_flow_id = dep.task_flow_id
+				-- Task is running or dependent task has completed and is waiting to run
+				WHERE	base.exec_status = 1 OR (COALESCE(dep.exec_status, 3) = 3 AND base.exec_status = 0)
+			)base
+		-- Control within the number of concurrent executions
+		WHERE rowno <= $1 AND base.exec_status = 0;`, concurrency)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("query error: %v", err))
 	}

@@ -25,12 +25,12 @@ func NewWatcherTask(db *db.DB, execTaskCh chan db.ExecutableTask) *watcherTask {
 // WatchTask searches for tasks that are waiting to be executed and can be executed.
 // If the target task exists, update the status of the task using an optimistic lock
 // and assign the job to a worker existing in the worker pool.
-func (w *watcherTask) WatchTask(ctx context.Context) error {
+func (w *watcherTask) WatchTask(ctx context.Context, concurrency int) error {
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	waitingTasks, err := w.db.GetExecutableTask(ctx)
+	waitingTasks, err := w.db.GetExecutableTask(ctx, concurrency)
 	if err != nil {
 		return errors.WithStack(err)
 	}
