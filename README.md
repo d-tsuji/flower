@@ -8,7 +8,7 @@ Flower is a workflow engine. Manages the execution of a series of tasks that mak
 
 ## Tasks
 
-Tasks that compose a workflow are defined in DAG as follows.
+Tasks that compose a workflow are defined in [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph) as follows.
 
 ![Task structure](/doc/images/task_structure.png "Task structure")
 
