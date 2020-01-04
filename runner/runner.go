@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//　Runner is a struct for executing tasks
+// Runner is a struct for executing tasks.
 type runner struct {
 	task db.ExecutableTask
 	db   *db.DB
