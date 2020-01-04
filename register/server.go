@@ -30,6 +30,18 @@ func NewServer(db *db.DB) *Server {
 
 // ServeHTTP handles path routing.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	//　Validate request
+	if r.Method != "POST" {
+		http.Error(w, "Use the appropriate Method", http.StatusBadRequest)
+		return
+	}
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Use the appropriate Content-Type", http.StatusBadRequest)
+		return
+	}
+
 	if r.URL.Path == "/register" {
 		s.register(w, r)
 		return
