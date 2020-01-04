@@ -23,7 +23,7 @@ func main() {
 	dbClient, err := db.New(&db.Opt{Password: "flower"})
 	defer dbClient.Close()
 	if err != nil {
-		log.Fatal(fmt.Sprintf("postgres initialize error: %v\n", err))
+		log.Fatal(fmt.Sprintf("[watcher] postgres initialize error: %v\n", err))
 	}
 	// start up worker pool
 	collector := watcher.StartDispatcher(ctx, WORKER_COUNT, dbClient)
@@ -34,9 +34,9 @@ func main() {
 		for {
 			select {
 			case <-tic.C:
-				fmt.Printf("watching task...\n")
+				log.Printf("[watcher] watching task...\n")
 				if err := w.WatchTask(ctx); err != nil {
-					fmt.Printf("watcher task error: %+v\n", err)
+					log.Printf("[watcher] watcher task error: %+v\n", err)
 				}
 			case <-ctx.Done():
 				return

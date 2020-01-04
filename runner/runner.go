@@ -2,7 +2,7 @@ package runner
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/d-tsuji/flower-v2/db"
@@ -39,7 +39,7 @@ func (r *runner) Run(ctx context.Context) error {
 }
 
 func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
-	fmt.Printf("runTask executing.\n")
+	log.Printf("[runner] runTask executing...\n")
 
 	programName, err := r.db.GetTaskProgramName(ctx, r.task)
 	if err != nil {

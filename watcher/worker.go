@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/d-tsuji/flower-v2/db"
@@ -26,17 +25,12 @@ func (w *Worker) Start(ctx context.Context) {
 			case job := <-w.Channel:
 				r := runner.NewRunner(job, w.DBClient)
 				if err := r.Run(ctx); err != nil {
-					fmt.Printf("runner.Run() is failed. err: %v\n", err)
+					log.Printf("[worker] runner.Run() is failed. err: %v\n", err)
 				}
 			case <-ctx.Done():
+				log.Printf("[worker] worker [%d] is stopping\n", w.ID)
 				return
 			}
 		}
 	}()
-}
-
-// end worker
-func (w *Worker) Stop() {
-	log.Printf("worker [%d] is stopping", w.ID)
-	w.End <- true
 }

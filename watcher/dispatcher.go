@@ -2,7 +2,7 @@ package watcher
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/d-tsuji/flower-v2/db"
 )
@@ -21,7 +21,7 @@ func StartDispatcher(ctx context.Context, workerCount int, dbClient *db.DB) Coll
 
 	for i < workerCount {
 		i++
-		fmt.Println("starting worker: ", i)
+		log.Printf("[dispatcher] starting worker: %d\n", i)
 		worker := Worker{
 			ID:            i,
 			Channel:       make(chan db.ExecutableTask),
@@ -36,11 +36,6 @@ func StartDispatcher(ctx context.Context, workerCount int, dbClient *db.DB) Coll
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
-				for _, w := range workers {
-					w.Stop()
-				}
-				return
 			case work := <-input:
 				worker := <-WorkerChannel
 				worker <- work
