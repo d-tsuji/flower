@@ -2,7 +2,7 @@
 # Step.1 Build Stage
 ############################################################
 FROM golang:1.13 AS builder
-ENV REPOSITORY github.com/d-tsuji/flower-v2
+ENV REPOSITORY github.com/d-tsuji/flower
 ENV GO111MODULE=on
 ENV GOOS=linux
 ENV GOARCH=amd64
