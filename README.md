@@ -1,4 +1,4 @@
-# flower [![Go Report Card](https://goreportcard.com/badge/github.com/d-tsuji/flower)](https://goreportcard.com/report/github.com/d-tsuji/flower) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg) [![Actions Status](https://github.com/d-tsuji/flower/workflows/build/badge.svg)](https://github.com/d-tsuji/flower/actions)
+# flower [![Go Report Card](https://goreportcard.com/badge/github.com/d-tsuji/flower)](https://goreportcard.com/report/github.com/d-tsuji/flower) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg) [![Actions Status](https://github.com/d-tsuji/flower/workflows/build/badge.svg)](https://github.com/d-tsuji/flower/actions) [![GoDoc](https://godoc.org/github.com/d-tsuji/flower?status.svg)](https://godoc.org/github.com/d-tsuji/flower)
 
 Flower is a workflow engine. Manages the execution of a series of tasks that make up a workflow. It manages the status of a series of tasks to be executed, and has a mechanism to quickly find a recovery point in the event of an error. Similarly, it has a mechanism that makes recovery such as reruns easy. Supports parallel execution of tasks and flow control by worker pool.
 
@@ -14,9 +14,36 @@ Tasks that compose a workflow are defined in [DAG](https://en.wikipedia.org/wiki
 
 ## Usage
 
+Here is how to start flower using docker-compose.
+
 ```
-$ docker-compose -d up
+$ docker-compose up
+Starting flower_db_1 ... done
+Starting register    ... done
+Starting watcher     ... done
+Attaching to flower_db_1, watcher, register
+db_1        |
+db_1        | PostgreSQL Database directory appears to contain a database; Skipping initialization
+db_1        |
+db_1        | 2020-01-05 14:59:26.373 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+db_1        | 2020-01-05 14:59:26.373 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+db_1        | 2020-01-05 14:59:26.386 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db_1        | 2020-01-05 14:59:26.445 UTC [12] LOG:  database system was shut down at 2020-01-05 14:59:15 UTC
+db_1        | 2020-01-05 14:59:26.454 UTC [1] LOG:  database system is ready to accept connections
+watcher     | 2020/01/05 14:59:27 Waiting for: tcp://db:5432
+watcher     | 2020/01/05 14:59:27 Connected to tcp://db:5432
+watcher     | 2020/01/05 14:59:27 [dispatcher] starting worker: 1
+watcher     | 2020/01/05 14:59:27 [dispatcher] starting worker: 2
+watcher     | 2020/01/05 14:59:27 [dispatcher] starting worker: 3
+watcher     | 2020/01/05 14:59:27 [dispatcher] starting worker: 4
+watcher     | 2020/01/05 14:59:27 [dispatcher] starting worker: 5
+register    | 2020/01/05 14:59:27 Waiting for: tcp://db:5432
+register    | 2020/01/05 14:59:27 Connected to tcp://db:5432
+register    | 2020/01/05 14:59:27 [register] starting server on address: 0.0.0.0:8000
+watcher     | 2020/01/05 14:59:32 [watcher] watching task...
 ```
+
+Note: Application of *watcher* and *register* depend on starting Database. Therefore, it is controlled using [dockerize](https://github.com/jwilder/dockerize).
 
 ### Detail
 
