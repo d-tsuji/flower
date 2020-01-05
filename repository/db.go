@@ -33,7 +33,12 @@ const (
 	// ExecStatusIgnore is the status to be ignored.
 	ExecStatusIgnore = 9
 
-	selectRegisterTask    = `SELECT task_id, task_seq, program, task_priority FROM ms_task_definition WHERE task_id = $1;`
+	selectRegisterTask = `
+		SELECT
+			task_id, task_seq, program, task_priority,
+			param1_key, param1_value, param2_key, param2_value, param3_key, param3_value,
+			param4_key, param4_value, param5_key, param5_value
+		FROM ms_task_definition WHERE task_id = $1;`
 	selectTaskProgramName = `SELECT program FROM ms_task_definition WHERE task_id = $1 AND task_seq = $2;`
 	selectExecutableTask  = `
 		SELECT
@@ -100,6 +105,7 @@ type task struct {
 	TaskSeq      int    `db:"task_seq"`
 	Program      string `db:"program"`
 	TaskPriority int    `db:"task_priority"`
+	Params       map[string]string
 }
 
 // ExecutableTask is the struct of executable tasks.
@@ -178,21 +184,11 @@ func (db *DB) GetExecutableTask(ctx context.Context, concurrency int) ([]Executa
 	defer rows.Close()
 
 	for rows.Next() {
-		var (
-			taskFlowId  string
-			taskExecSeq int
-			taskId      string
-			taskSeq     int
-		)
-		if err := rows.Scan(&taskFlowId, &taskExecSeq, &taskId, &taskSeq); err != nil {
-			return nil, errors.New(fmt.Sprintf("rows scan error: %v", err))
+		task, err := readExecutableTask(rows)
+		if err != nil {
+			return nil, errors.WithStack(err)
 		}
-		tasks = append(tasks, ExecutableTask{
-			TaskFlowId:  taskFlowId,
-			TaskExecSeq: taskExecSeq,
-			TaskId:      taskId,
-			TaskSeq:     taskSeq,
-		})
+		tasks = append(tasks, *task)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.New(fmt.Sprintf("rows error: %v", err))

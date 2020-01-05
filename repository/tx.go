@@ -6,6 +6,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -114,21 +115,11 @@ func (t *adminTX) getRegisterTask(ctx context.Context, taskId string) ([]task, e
 	defer rows.Close()
 
 	for rows.Next() {
-		var (
-			taskId       string
-			taskSeq      int
-			program      string
-			taskPriority int
-		)
-		if err := rows.Scan(&taskId, &taskSeq, &program, &taskPriority); err != nil {
-			return nil, errors.New(fmt.Sprintf("rows scan error: %v", err))
+		task, err := readTask(rows)
+		if err != nil {
+			return nil, errors.WithStack(err)
 		}
-		tasks = append(tasks, task{
-			TaskId:       taskId,
-			TaskSeq:      taskSeq,
-			Program:      program,
-			TaskPriority: taskPriority,
-		})
+		tasks = append(tasks, *task)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.New(fmt.Sprintf("rows error: %v", err))
@@ -150,11 +141,15 @@ func (t *adminTX) insertExecutableTasks(ctx context.Context, tasks []task) error
 		return errors.New(fmt.Sprintf("generate uuid error: %v", err))
 	}
 	for _, task := range tasks {
-		_, err := stmt.ExecContext(ctx,
+		params, err := json.Marshal(task.Params)
+		if err != nil {
+			return errors.New(fmt.Sprintf("json marshal error: %v", err))
+		}
+		_, err = stmt.ExecContext(ctx,
 			taskFlowId,
 			taskExecSec,
 			dependsTaskExecSec,
-			"{}", // TODO: handle parameter
+			string(params),
 			task.TaskId,
 			task.TaskSeq,
 			0,
