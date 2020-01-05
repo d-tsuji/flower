@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	// database/sql driver
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -211,33 +209,9 @@ func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
 			return errors.WithStack(err)
 		}
 
-		stmt, err := t.tx.PrepareContext(ctx, insertExecutableTasks)
+		err = t.insertExecutableTasks(ctx, tasks)
 		if err != nil {
-			return errors.New(fmt.Sprintf("query prepare error 'INSERT INTO kr_task_stat': %v", err))
-		}
-		defer stmt.Close()
-
-		taskExecSec, dependsTaskExecSec := 1, -1
-		taskFlowId, err := uuid.NewUUID()
-		if err != nil {
-			return errors.New(fmt.Sprintf("generate uuid error: %v", err))
-		}
-		for _, task := range tasks {
-			_, err := stmt.ExecContext(ctx,
-				taskFlowId,
-				taskExecSec,
-				dependsTaskExecSec,
-				"{}", // TODO: handle parameter
-				task.TaskId,
-				task.TaskSeq,
-				0,
-				task.TaskPriority,
-			)
-			if err != nil {
-				return errors.New(fmt.Sprintf("query error: %v", err))
-			}
-			dependsTaskExecSec = taskExecSec
-			taskExecSec++
+			return errors.WithStack(err)
 		}
 		return nil
 	})

@@ -10,6 +10,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/google/uuid"
+
 	"github.com/pkg/errors"
 )
 
@@ -64,9 +66,6 @@ func (t *adminTX) Close() error {
 // AdminTXFunc is the signature for functions passed to ReadWriteTransaction.
 type AdminTXFunc func(context.Context, *adminTX) error
 
-// UpdateExecutableTasks updates task status with an optimistic lock.
-// It is not an error if the record has already been updated,
-// but returns false as the first argument of the return value.
 func (t *adminTX) updateExecutableTasks(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int, ok *bool) error {
 	// Acquire a lock for updating a record.
 	stmtUpdateExecutableTaskLock, err := t.tx.PrepareContext(ctx, selectUpdateExecutableTaskLock)
@@ -106,7 +105,6 @@ func (t *adminTX) updateExecutableTasks(ctx context.Context, e ExecutableTask, b
 	return nil
 }
 
-// GetRegisterTask gets a series of tasks registered in the master from taskId.
 func (t *adminTX) getRegisterTask(ctx context.Context, taskId string) ([]task, error) {
 	var tasks []task
 	rows, err := t.tx.QueryContext(ctx, selectRegisterTask, taskId)
@@ -137,4 +135,36 @@ func (t *adminTX) getRegisterTask(ctx context.Context, taskId string) ([]task, e
 	}
 
 	return tasks, nil
+}
+
+func (t *adminTX) insertExecutableTasks(ctx context.Context, tasks []task) error {
+	stmt, err := t.tx.PrepareContext(ctx, insertExecutableTasks)
+	if err != nil {
+		return errors.New(fmt.Sprintf("query prepare error 'INSERT INTO kr_task_stat': %v", err))
+	}
+	defer stmt.Close()
+
+	taskExecSec, dependsTaskExecSec := 1, -1
+	taskFlowId, err := uuid.NewUUID()
+	if err != nil {
+		return errors.New(fmt.Sprintf("generate uuid error: %v", err))
+	}
+	for _, task := range tasks {
+		_, err := stmt.ExecContext(ctx,
+			taskFlowId,
+			taskExecSec,
+			dependsTaskExecSec,
+			"{}", // TODO: handle parameter
+			task.TaskId,
+			task.TaskSeq,
+			0,
+			task.TaskPriority,
+		)
+		if err != nil {
+			return errors.New(fmt.Sprintf("query error: %v", err))
+		}
+		dependsTaskExecSec = taskExecSec
+		taskExecSec++
+	}
+	return nil
 }
