@@ -3,7 +3,6 @@ package register
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -32,14 +31,14 @@ func NewServer(db *repository.DB) *Server {
 // ServeHTTP handles path routing.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	//　Validate request
+	// Validate request
 	if r.Method != "POST" {
-		http.Error(w, "Use the appropriate Method", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Use the appropriate Content-Type", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -54,36 +53,36 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	b, err := ioutil.ReadAll(r.Body)
 	defer func() {
 		if err := r.Body.Close(); err != nil {
-			fmt.Printf("%+v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("%+v", err)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}()
 	if err != nil {
-		fmt.Printf("%+v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("%+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	var payload Payload
 	err = json.Unmarshal(b, &payload)
 	if err != nil {
-		fmt.Printf("%+v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("%+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	ctx := context.Background()
 	if err := s.db.InsertExecutableTasks(ctx, payload.TaskId); err != nil {
-		fmt.Printf("%+v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("%+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	output, err := json.Marshal("{status: succeeded}")
 	if err != nil {
-		fmt.Printf("%+v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("%+v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
