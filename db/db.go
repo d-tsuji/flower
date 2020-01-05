@@ -282,12 +282,14 @@ func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, befor
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("begin transaction error: %v", err))
 	}
-	stmtInsertExecutableTask, err := tx.PrepareContext(ctx, `
-	UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`)
+
+	// Acquire a lock for updating a record.
+	stmtUpdateExecutableTaskLock, err := tx.PrepareContext(ctx, `
+	SELECT * FROM kr_task_stat WHERE task_flow_id = $1 and task_exec_seq = $2 and exec_status = $3 FOR UPDATE;`)
 	if err != nil {
-		return false, errors.New(fmt.Sprintf("query prepare error 'UPDATE kr_task_stat': %v", err))
+		return false, errors.New(fmt.Sprintf("query prepare error 'SELECT kr_task_stat ... FOR UPDATE': %v", err))
 	}
-	result, err := stmtInsertExecutableTask.ExecContext(ctx, afterTaskStatus, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
+	result, err := stmtUpdateExecutableTaskLock.ExecContext(ctx, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("query error: %v", err))
 	}
@@ -298,6 +300,25 @@ func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, befor
 	if num == 0 {
 		return false, nil
 	}
+
+	// Updates the record that acquired the lock.
+	stmtUpdateExecutableTask, err := tx.PrepareContext(ctx, `
+	UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("query prepare error 'UPDATE kr_task_stat': %v", err))
+	}
+	result, err = stmtUpdateExecutableTask.ExecContext(ctx, afterTaskStatus, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("query error: %v", err))
+	}
+	num, err = result.RowsAffected()
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	if num == 0 {
+		return false, nil
+	}
+
 	if err := tx.Commit(); err != nil {
 		return false, errors.New(fmt.Sprintf("transaction commit error: %v", err))
 	}
