@@ -1,10 +1,9 @@
-package db
+package repository
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -36,11 +35,9 @@ const (
 	// ExecStatusIgnore is the status to be ignored.
 	ExecStatusIgnore = 9
 
-	selectRegisterTask = `SELECT task_id, task_seq, program, task_priority FROM ms_task_definition WHERE task_id = $1;`
-
+	selectRegisterTask    = `SELECT task_id, task_seq, program, task_priority FROM ms_task_definition WHERE task_id = $1;`
 	selectTaskProgramName = `SELECT program FROM ms_task_definition WHERE task_id = $1 AND task_seq = $2;`
-
-	selectExecutableTask = `
+	selectExecutableTask  = `
 		SELECT
 			base.task_flow_id
 		,	base.task_exec_seq
@@ -68,7 +65,6 @@ const (
 			)base
 		-- Control within the number of concurrent executions
 		WHERE rowno <= $1 AND base.exec_status = 0;`
-
 	insertExecutableTasks = `
 	INSERT INTO kr_task_stat(
 		task_flow_id
@@ -80,10 +76,8 @@ const (
 	,	exec_status
 	,	task_priority)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
-
 	selectUpdateExecutableTaskLock = `SELECT * FROM kr_task_stat WHERE task_flow_id = $1 and task_exec_seq = $2 and exec_status = $3 FOR UPDATE;`
-
-	updateExecutableTask = `UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
+	updateExecutableTask           = `UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
 )
 
 // DB represents a Database handler.
@@ -100,6 +94,22 @@ type Opt struct {
 	Host     string
 	Port     string
 	SSLMode  string
+}
+
+// Task is one record of ms_task.
+type task struct {
+	TaskId       string `db:"task_id"`
+	TaskSeq      int    `db:"task_seq"`
+	Program      string `db:"program"`
+	TaskPriority int    `db:"task_priority"`
+}
+
+// ExecutableTask is the struct of executable tasks.
+type ExecutableTask struct {
+	TaskFlowId  string `db:"task_flow_id"`
+	TaskExecSeq int    `db:"task_exec_seq"`
+	TaskId      string `db:"task_id"`
+	TaskSeq     int    `db:"task_seq"`
 }
 
 // New creates the DB object.
@@ -133,56 +143,27 @@ func New(opt *Opt) (*DB, error) {
 	return &DB{db}, nil
 }
 
-// Task is one record of ms_task.
-type task struct {
-	TaskId       string `db:"task_id"`
-	TaskSeq      int    `db:"task_seq"`
-	Program      string `db:"program"`
-	TaskPriority int    `db:"task_priority"`
-}
-
-// GetRegisterTask gets a series of tasks registered in the master from taskId.
-func (db *DB) getRegisterTask(ctx context.Context, taskId string) ([]task, error) {
-	var tasks []task
-
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
-	rows, err := db.QueryContext(ctx, selectRegisterTask, taskId)
+func (db *DB) beginInternal(ctx context.Context) (*adminTX, error) {
+	tx, err := db.BeginTx(ctx, nil /* opts */)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("query error: %v", err))
+		return nil, err
 	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var (
-			taskId       string
-			taskSeq      int
-			program      string
-			taskPriority int
-		)
-		if err := rows.Scan(&taskId, &taskSeq, &program, &taskPriority); err != nil {
-			return nil, errors.New(fmt.Sprintf("rows scan error: %v", err))
-		}
-		tasks = append(tasks, task{
-			TaskId:       taskId,
-			TaskSeq:      taskSeq,
-			Program:      program,
-			TaskPriority: taskPriority,
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, errors.New(fmt.Sprintf("rows error: %v", err))
-	}
-
-	return tasks, nil
+	return &adminTX{tx: tx}, nil
 }
 
-// ExecutableTask is the struct of executable tasks.
-type ExecutableTask struct {
-	TaskFlowId  string `db:"task_flow_id"`
-	TaskExecSeq int    `db:"task_exec_seq"`
-	TaskId      string `db:"task_id"`
-	TaskSeq     int    `db:"task_seq"`
+// ReadWriteTransaction creates a transaction, and runs f with it.
+// Some storage implementations may retry aborted transactions, so
+// f MUST be idempotent.
+func (db *DB) ReadWriteTransaction(ctx context.Context, f AdminTXFunc) error {
+	tx, err := db.beginInternal(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Close()
+	if err := f(ctx, tx); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // GetExecutableTask is the main method.
@@ -224,128 +205,76 @@ func (db *DB) GetExecutableTask(ctx context.Context, concurrency int) ([]Executa
 
 // InsertExecutableTasks registers the task waiting to be executed from the called taskId.
 func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
-
-	tasks, err := db.getRegisterTask(ctx, taskId)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return errors.New(fmt.Sprintf("begin transaction error: %v", err))
-	}
-	stmtInsertExecutableTask, err := tx.PrepareContext(ctx, insertExecutableTasks)
-	if err != nil {
-		return errors.New(fmt.Sprintf("query prepare error 'INSERT INTO kr_task_stat': %v", err))
-	}
-	defer stmtInsertExecutableTask.Close()
-
-	taskExecSec, dependsTaskExecSec := 1, 0
-	taskFlowId, err := uuid.NewUUID()
-	if err != nil {
-		return errors.New(fmt.Sprintf("generate uuid error: %v", err))
-	}
-	for _, task := range tasks {
-		_, err := stmtInsertExecutableTask.ExecContext(ctx,
-			taskFlowId,
-			taskExecSec,
-			dependsTaskExecSec,
-			"{}",
-			task.TaskId,
-			task.TaskSeq,
-			0,
-			task.TaskPriority,
-		)
+	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
+		tasks, err := t.getRegisterTask(ctx, taskId)
 		if err != nil {
-			return errors.New(fmt.Sprintf("query error: %v", err))
+			return errors.WithStack(err)
 		}
-		dependsTaskExecSec = taskExecSec
-		taskExecSec++
-	}
 
-	if err := tx.Commit(); err != nil {
-		return errors.New(fmt.Sprintf("transaction commit error: %v", err))
-	}
-	return nil
+		stmt, err := t.tx.PrepareContext(ctx, insertExecutableTasks)
+		if err != nil {
+			return errors.New(fmt.Sprintf("query prepare error 'INSERT INTO kr_task_stat': %v", err))
+		}
+		defer stmt.Close()
+
+		taskExecSec, dependsTaskExecSec := 1, -1
+		taskFlowId, err := uuid.NewUUID()
+		if err != nil {
+			return errors.New(fmt.Sprintf("generate uuid error: %v", err))
+		}
+		for _, task := range tasks {
+			_, err := stmt.ExecContext(ctx,
+				taskFlowId,
+				taskExecSec,
+				dependsTaskExecSec,
+				"{}", // TODO: handle parameter
+				task.TaskId,
+				task.TaskSeq,
+				0,
+				task.TaskPriority,
+			)
+			if err != nil {
+				return errors.New(fmt.Sprintf("query error: %v", err))
+			}
+			dependsTaskExecSec = taskExecSec
+			taskExecSec++
+		}
+		return nil
+	})
+	return err
 }
 
 // UpdateExecutableTasksRunning updates task status to running.
 func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e ExecutableTask) (bool, error) {
-	return db.updateExecutableTasks(ctx, e, ExecStatusWait, ExecStatusRunning)
+	var ok bool
+	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
+		return t.updateExecutableTasks(ctx, e, ExecStatusWait, ExecStatusRunning, &ok)
+	})
+	return ok, err
 }
 
 // UpdateExecutableTasksRunning updates the status of tasks to finished.
 func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTask) (bool, error) {
-	return db.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusFinish)
+	var ok bool
+	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
+		return t.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusFinish, &ok)
+	})
+	return ok, err
 }
 
 // UpdateExecutableTasksRunning updates the status of a task to suspended.
 func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e ExecutableTask) (bool, error) {
-	return db.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusSuspend)
-}
-
-// UpdateExecutableTasks updates task status with an optimistic lock.
-// It is not an error if the record has already been updated,
-// but returns false as the first argument of the return value.
-func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
-
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("begin transaction error: %v", err))
-	}
-
-	// Acquire a lock for updating a record.
-	stmtUpdateExecutableTaskLock, err := tx.PrepareContext(ctx, selectUpdateExecutableTaskLock)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("query prepare error 'SELECT kr_task_stat ... FOR UPDATE': %v", err))
-	}
-	defer stmtUpdateExecutableTaskLock.Close()
-	result, err := stmtUpdateExecutableTaskLock.ExecContext(ctx, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("query error: %v", err))
-	}
-	num, err := result.RowsAffected()
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	if num == 0 {
-		return false, nil
-	}
-
-	// Updates the record that acquired the lock.
-	stmtUpdateExecutableTask, err := tx.PrepareContext(ctx, updateExecutableTask)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("query prepare error 'UPDATE kr_task_stat': %v", err))
-	}
-	defer stmtUpdateExecutableTask.Close()
-	result, err = stmtUpdateExecutableTask.ExecContext(ctx, afterTaskStatus, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("query error: %v", err))
-	}
-	num, err = result.RowsAffected()
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	if num == 0 {
-		return false, nil
-	}
-
-	if err := tx.Commit(); err != nil {
-		return false, errors.New(fmt.Sprintf("transaction commit error: %v", err))
-	}
-	return true, nil
+	var ok bool
+	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
+		err := t.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusSuspend, &ok)
+		return err
+	})
+	return ok, err
 }
 
 // GetTaskProgramName gets the name of the program to be executed from taskId and taskSeq.
 func (db *DB) GetTaskProgramName(ctx context.Context, task ExecutableTask) (string, error) {
 	var programName string
-
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
 	rows, err := db.QueryContext(ctx, selectTaskProgramName, task.TaskId, task.TaskSeq)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("query error: %v", err))

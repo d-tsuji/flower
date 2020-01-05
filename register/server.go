@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/d-tsuji/flower-v2/db"
+	"github.com/d-tsuji/flower/repository"
 )
 
 // Payload is included in the request body from the client
@@ -19,11 +19,11 @@ type Payload struct {
 
 // Server contains settings for connecting to DB.
 type Server struct {
-	db *db.DB
+	db *repository.DB
 }
 
 // NewServer creates a new Server.
-func NewServer(db *db.DB) *Server {
+func NewServer(db *repository.DB) *Server {
 	return &Server{
 		db: db,
 	}

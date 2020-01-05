@@ -1,4 +1,4 @@
-module github.com/d-tsuji/flower-v2
+module github.com/d-tsuji/flower
 
 go 1.13
 

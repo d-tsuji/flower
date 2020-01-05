@@ -4,18 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/d-tsuji/flower-v2/db"
+	"github.com/d-tsuji/flower/repository"
 	"github.com/pkg/errors"
 )
 
 // watcherTask contains the channel of the task being watched.
 type watcherTask struct {
-	db         *db.DB
-	ExecTaskCh chan db.ExecutableTask
+	db         *repository.DB
+	ExecTaskCh chan repository.ExecutableTask
 }
 
 // NewWatcherTask creates a new watcherTask.
-func NewWatcherTask(db *db.DB, execTaskCh chan db.ExecutableTask) *watcherTask {
+func NewWatcherTask(db *repository.DB, execTaskCh chan repository.ExecutableTask) *watcherTask {
 	return &watcherTask{
 		db:         db,
 		ExecTaskCh: execTaskCh,
@@ -35,7 +35,7 @@ func (w *watcherTask) WatchTask(ctx context.Context, concurrency int) error {
 		return errors.WithStack(err)
 	}
 
-	var runTasks []db.ExecutableTask
+	var runTasks []repository.ExecutableTask
 	for _, wt := range waitingTasks {
 		ok, err := w.db.UpdateExecutableTasksRunning(ctx, wt)
 		if err != nil {

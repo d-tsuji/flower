@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/d-tsuji/flower-v2/db"
-	"github.com/d-tsuji/flower-v2/watcher"
+	"github.com/d-tsuji/flower/repository"
+	"github.com/d-tsuji/flower/watcher"
 )
 
 const (
@@ -25,7 +25,7 @@ func main() {
 	dbname := flag.String("dbname", "", "postgres database name")
 	flag.Parse()
 
-	dbClient, err := db.New(&db.Opt{
+	dbClient, err := repository.New(&repository.Opt{
 		DBName:   *dbname,
 		User:     *dbuser,
 		Password: *dbpass,
@@ -42,7 +42,7 @@ func main() {
 
 	// start up worker pool
 	collector := watcher.StartDispatcher(ctx, WORKER_COUNT, dbClient)
-	w := watcher.NewWatcherTask(dbClient, make(chan db.ExecutableTask))
+	w := watcher.NewWatcherTask(dbClient, make(chan repository.ExecutableTask))
 	tic := time.NewTicker(POLLING_INTERVAL_SECOND * time.Second)
 	go func() {
 		for {

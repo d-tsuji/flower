@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/d-tsuji/flower-v2/db"
-	"github.com/d-tsuji/flower-v2/register"
+	"github.com/d-tsuji/flower/register"
+	"github.com/d-tsuji/flower/repository"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	webport := flag.String("webport", "8000", "web server port")
 	flag.Parse()
 
-	dbClient, err := db.New(&db.Opt{
+	dbClient, err := repository.New(&repository.Opt{
 		DBName:   *dbname,
 		User:     *dbuser,
 		Password: *dbpass,

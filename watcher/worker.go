@@ -4,15 +4,15 @@ import (
 	"context"
 	"log"
 
-	"github.com/d-tsuji/flower-v2/db"
-	"github.com/d-tsuji/flower-v2/runner"
+	"github.com/d-tsuji/flower/repository"
+	"github.com/d-tsuji/flower/runner"
 )
 
 type Worker struct {
 	ID            int
-	WorkerChannel chan chan db.ExecutableTask
-	Channel       chan db.ExecutableTask
-	DBClient      *db.DB
+	WorkerChannel chan chan repository.ExecutableTask
+	Channel       chan repository.ExecutableTask
+	DBClient      *repository.DB
 }
 
 // start worker

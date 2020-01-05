@@ -5,18 +5,18 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/d-tsuji/flower-v2/db"
+	"github.com/d-tsuji/flower/repository"
 	"github.com/pkg/errors"
 )
 
 // Runner is a struct for executing tasks.
 type runner struct {
-	task db.ExecutableTask
-	db   *db.DB
+	task repository.ExecutableTask
+	db   *repository.DB
 }
 
 // NewServer creates a new Runner.
-func NewRunner(task db.ExecutableTask, db *db.DB) *runner {
+func NewRunner(task repository.ExecutableTask, db *repository.DB) *runner {
 	return &runner{
 		task: task,
 		db:   db,
