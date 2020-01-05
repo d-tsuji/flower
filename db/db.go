@@ -35,6 +35,55 @@ const (
 	ExecStatusFinish = 3
 	// ExecStatusIgnore is the status to be ignored.
 	ExecStatusIgnore = 9
+
+	selectRegisterTask = `SELECT task_id, task_seq, program, task_priority FROM ms_task_definition WHERE task_id = $1;`
+
+	selectTaskProgramName = `SELECT program FROM ms_task_definition WHERE task_id = $1 AND task_seq = $2;`
+
+	selectExecutableTask = `
+		SELECT
+			base.task_flow_id
+		,	base.task_exec_seq
+		,	base.task_id
+		,	base.task_seq
+		FROM
+			(
+				SELECT
+					base.task_flow_id
+				,	base.task_exec_seq
+				,	base.task_id
+				,	base.task_seq
+				,	base.exec_status
+				,	ROW_NUMBER() OVER (ORDER BY base.exec_status DESC, base.task_exec_seq, base.task_priority) rowno
+				FROM
+					kr_task_stat base
+				LEFT JOIN
+					kr_task_stat dep
+					ON	1=1
+						AND	base.depends_task_exec_seq = dep.task_exec_seq
+						AND	base.task_id = dep.task_id
+						AND	base.task_flow_id = dep.task_flow_id
+				-- Task is running or dependent task has completed and is waiting to run
+				WHERE	base.exec_status = 1 OR (COALESCE(dep.exec_status, 3) = 3 AND base.exec_status = 0)
+			)base
+		-- Control within the number of concurrent executions
+		WHERE rowno <= $1 AND base.exec_status = 0;`
+
+	insertExecutableTasks = `
+	INSERT INTO kr_task_stat(
+		task_flow_id
+	,	task_exec_seq
+	,	depends_task_exec_seq
+	,	parameters
+	,	task_id
+	,	task_seq
+	,	exec_status
+	,	task_priority)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+
+	selectUpdateExecutableTaskLock = `SELECT * FROM kr_task_stat WHERE task_flow_id = $1 and task_exec_seq = $2 and exec_status = $3 FOR UPDATE;`
+
+	updateExecutableTask = `UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
 )
 
 // DB represents a Database handler.
@@ -98,10 +147,11 @@ func (db *DB) getRegisterTask(ctx context.Context, taskId string) ([]task, error
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	rows, err := db.QueryContext(ctx, `SELECT task_id, task_seq, program, task_priority FROM ms_task_definition WHERE task_id = $1`, taskId)
+	rows, err := db.QueryContext(ctx, selectRegisterTask, taskId)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("query error: %v", err))
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -142,37 +192,11 @@ type ExecutableTask struct {
 func (db *DB) GetExecutableTask(ctx context.Context, concurrency int) ([]ExecutableTask, error) {
 	var tasks []ExecutableTask
 
-	rows, err := db.QueryContext(ctx, `
-		SELECT
-			base.task_flow_id
-		,	base.task_exec_seq
-		,	base.task_id
-		,	base.task_seq
-		FROM
-			(
-				SELECT
-					base.task_flow_id
-				,	base.task_exec_seq
-				,	base.task_id
-				,	base.task_seq
-				,	base.exec_status
-				,	ROW_NUMBER() OVER (ORDER BY base.exec_status DESC, base.task_exec_seq, base.task_priority) rowno
-				FROM
-					kr_task_stat base
-				LEFT JOIN
-					kr_task_stat dep
-					ON	1=1
-						AND	base.depends_task_exec_seq = dep.task_exec_seq
-						AND	base.task_id = dep.task_id
-						AND	base.task_flow_id = dep.task_flow_id
-				-- Task is running or dependent task has completed and is waiting to run
-				WHERE	base.exec_status = 1 OR (COALESCE(dep.exec_status, 3) = 3 AND base.exec_status = 0)
-			)base
-		-- Control within the number of concurrent executions
-		WHERE rowno <= $1 AND base.exec_status = 0;`, concurrency)
+	rows, err := db.QueryContext(ctx, selectExecutableTask, concurrency)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("query error: %v", err))
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -212,20 +236,11 @@ func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("begin transaction error: %v", err))
 	}
-	stmtInsertExecutableTask, err := tx.PrepareContext(ctx, `
-	INSERT INTO kr_task_stat(
-		task_flow_id
-	,	task_exec_seq
-	,	depends_task_exec_seq
-	,	parameters
-	,	task_id
-	,	task_seq
-	,	exec_status
-	,	task_priority)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`)
+	stmtInsertExecutableTask, err := tx.PrepareContext(ctx, insertExecutableTasks)
 	if err != nil {
 		return errors.New(fmt.Sprintf("query prepare error 'INSERT INTO kr_task_stat': %v", err))
 	}
+	defer stmtInsertExecutableTask.Close()
 
 	taskExecSec, dependsTaskExecSec := 1, 0
 	taskFlowId, err := uuid.NewUUID()
@@ -284,11 +299,11 @@ func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, befor
 	}
 
 	// Acquire a lock for updating a record.
-	stmtUpdateExecutableTaskLock, err := tx.PrepareContext(ctx, `
-	SELECT * FROM kr_task_stat WHERE task_flow_id = $1 and task_exec_seq = $2 and exec_status = $3 FOR UPDATE;`)
+	stmtUpdateExecutableTaskLock, err := tx.PrepareContext(ctx, selectUpdateExecutableTaskLock)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("query prepare error 'SELECT kr_task_stat ... FOR UPDATE': %v", err))
 	}
+	defer stmtUpdateExecutableTaskLock.Close()
 	result, err := stmtUpdateExecutableTaskLock.ExecContext(ctx, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("query error: %v", err))
@@ -302,11 +317,11 @@ func (db *DB) updateExecutableTasks(ctx context.Context, e ExecutableTask, befor
 	}
 
 	// Updates the record that acquired the lock.
-	stmtUpdateExecutableTask, err := tx.PrepareContext(ctx, `
-	UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`)
+	stmtUpdateExecutableTask, err := tx.PrepareContext(ctx, updateExecutableTask)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("query prepare error 'UPDATE kr_task_stat': %v", err))
 	}
+	defer stmtUpdateExecutableTask.Close()
 	result, err = stmtUpdateExecutableTask.ExecContext(ctx, afterTaskStatus, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("query error: %v", err))
@@ -331,10 +346,11 @@ func (db *DB) GetTaskProgramName(ctx context.Context, task ExecutableTask) (stri
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
-	rows, err := db.QueryContext(ctx, `SELECT program FROM ms_task_definition WHERE task_id = $1 AND task_seq = $2`, task.TaskId, task.TaskSeq)
+	rows, err := db.QueryContext(ctx, selectTaskProgramName, task.TaskId, task.TaskSeq)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("query error: %v", err))
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&programName); err != nil {
