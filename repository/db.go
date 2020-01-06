@@ -46,6 +46,7 @@ const (
 		,	base.task_exec_seq
 		,	base.task_id
 		,	base.task_seq
+		,	base.parameters
 		FROM
 			(
 				SELECT
@@ -54,6 +55,7 @@ const (
 				,	base.task_id
 				,	base.task_seq
 				,	base.exec_status
+				,	base.parameters
 				,	ROW_NUMBER() OVER (ORDER BY base.exec_status DESC, base.task_exec_seq, base.task_priority) rowno
 				FROM
 					kr_task_stat base
@@ -110,10 +112,11 @@ type task struct {
 
 // ExecutableTask is the struct of executable tasks.
 type ExecutableTask struct {
-	TaskFlowId  string `db:"task_flow_id"`
-	TaskExecSeq int    `db:"task_exec_seq"`
-	TaskId      string `db:"task_id"`
-	TaskSeq     int    `db:"task_seq"`
+	TaskFlowId  string            `db:"task_flow_id"`
+	TaskExecSeq int               `db:"task_exec_seq"`
+	TaskId      string            `db:"task_id"`
+	TaskSeq     int               `db:"task_seq"`
+	Params      map[string]string `db:"parameters"`
 }
 
 // New creates the DB object.

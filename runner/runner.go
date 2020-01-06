@@ -50,10 +50,9 @@ func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	executor := NewExecutor()
+	executor := NewExecutor(r.task.Params)
 	method := reflect.ValueOf(executor).MethodByName(programName)
-	in := make([]reflect.Value, 0)
-	values := method.Call(in)
+	values := method.Call(nil)
 
 	return values, nil
 }

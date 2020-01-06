@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -48,19 +49,19 @@ func readTask(row Row) (*task, error) {
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("rows scan error: %v", err))
 	}
-	m := make(map[string]string)
-	addMapIfNullString(param1Key, param1Value, &m)
-	addMapIfNullString(param2Key, param2Value, &m)
-	addMapIfNullString(param3Key, param3Value, &m)
-	addMapIfNullString(param4Key, param4Value, &m)
-	addMapIfNullString(param5Key, param5Value, &m)
+	pm := make(map[string]string)
+	addMapIfNullString(param1Key, param1Value, &pm)
+	addMapIfNullString(param2Key, param2Value, &pm)
+	addMapIfNullString(param3Key, param3Value, &pm)
+	addMapIfNullString(param4Key, param4Value, &pm)
+	addMapIfNullString(param5Key, param5Value, &pm)
 
 	return &task{
 		TaskId:       taskId,
 		TaskSeq:      taskSeq,
 		Program:      program,
 		TaskPriority: taskPriority,
-		Params:       m,
+		Params:       pm,
 	}, nil
 }
 
@@ -70,15 +71,21 @@ func readExecutableTask(row Row) (*ExecutableTask, error) {
 		taskExecSeq int
 		taskId      string
 		taskSeq     int
+		data        string
 	)
-	if err := row.Scan(&taskFlowId, &taskExecSeq, &taskId, &taskSeq); err != nil {
+	if err := row.Scan(&taskFlowId, &taskExecSeq, &taskId, &taskSeq, &data); err != nil {
 		return nil, errors.New(fmt.Sprintf("rows scan error: %v", err))
+	}
+	params := make(map[string]string)
+	if err := json.Unmarshal([]byte(data), &params); err != nil {
+		return nil, errors.New(fmt.Sprintf("json unmarshal error: %v", err))
 	}
 	return &ExecutableTask{
 		TaskFlowId:  taskFlowId,
 		TaskExecSeq: taskExecSeq,
 		TaskId:      taskId,
 		TaskSeq:     taskSeq,
+		Params:      params,
 	}, nil
 }
 
