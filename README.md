@@ -1,6 +1,13 @@
-# flower [![Go Report Card](https://goreportcard.com/badge/github.com/d-tsuji/flower)](https://goreportcard.com/report/github.com/d-tsuji/flower) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg) [![Actions Status](https://github.com/d-tsuji/flower/workflows/build/badge.svg)](https://github.com/d-tsuji/flower/actions) [![GoDoc](https://godoc.org/github.com/d-tsuji/flower?status.svg)](https://godoc.org/github.com/d-tsuji/flower)
+# Flower [![Go Report Card](https://goreportcard.com/badge/github.com/d-tsuji/flower)](https://goreportcard.com/report/github.com/d-tsuji/flower) ![License MIT](https://img.shields.io/badge/license-MIT-blue.svg) [![Actions Status](https://github.com/d-tsuji/flower/workflows/build/badge.svg)](https://github.com/d-tsuji/flower/actions) [![GoDoc](https://godoc.org/github.com/d-tsuji/flower?status.svg)](https://godoc.org/github.com/d-tsuji/flower)
 
-Flower is a workflow engine. Manages the execution of a series of tasks that make up a workflow. It manages the status of a series of tasks to be executed, and has a mechanism to quickly find a recovery point in the event of an error. Similarly, it has a mechanism that makes recovery such as reruns easy. Supports parallel execution of tasks and flow control by worker pool.
+Flower is a workflow engine. Manages the execution of a series of tasks that make up a workflow.
+
+- feature
+  - Control task execution order
+  - Easily find out which task caused the error
+  - Rerun or recover from a task
+  - Flow control for multiple workflows
+  - Prioritize workflow
 
 ## System Overview
 
@@ -12,7 +19,7 @@ Tasks that compose a workflow are defined in [DAG](https://en.wikipedia.org/wiki
 
 ![Task structure](/doc/images/task_structure.png "Task structure")
 
-## Usage
+## Getting Started
 
 Here is how to start flower using docker-compose.
 
@@ -45,29 +52,115 @@ watcher     | 2020/01/05 14:59:32 [watcher] watching task...
 
 Note: Application of *watcher* and *register* depend on starting Database. Therefore, it is controlled using [dockerize](https://github.com/jwilder/dockerize).
 
-### Detail
+## Configuration
 
-We have registered a series of tasks that make up a workflow in the master in advance.
+Flower consists of two main tables. **ms_task_definition** and **kr_task_stat**.
 
-| task_id | task_seq | program | task_priority |
-| ------- | -------- | ------- | ------------- |
-| sample  | 1        | Test1   | 10            |
-| sample  | 2        | Test2   | 10            |
-| sample  | 3        | Test3   | 10            |
+### `ms_task_definition`
 
-We can register a task as pending by executing an HTTP request or a job. Currently, only the following HTTP requests are supported. With the following HTTP request, the task of the workflow registered in `ms_task_definition` is registered in `kr_task_stat` as waiting to be executed.
+`ms_task_definition` is a table that defines the tasks that make up the workflow.
+
+| Column        | Primary Key | Data type     | Constraint |
+| ------------- | :---------: | ------------- | ---------- |
+| task_id       |     ✔️      | varchar(256)  | NOT NULL   |
+| task_seq      |     ✔️      | numeric       | NOT NULL   |
+| program       |             | varchar(256)  | NOT NULL   |
+| task_priority |             | numeric       | NOT NULL   |
+| param1_key    |             | varchar(1024) |            |
+| param1_value  |             | varchar(1024) |            |
+| param2_key    |             | varchar(1024) |            |
+| param2_value  |             | varchar(1024) |            |
+| param3_key    |             | varchar(1024) |            |
+| param3_value  |             | varchar(1024) |            |
+| param4_key    |             | varchar(1024) |            |
+| param4_value  |             | varchar(1024) |            |
+| param5_key    |             | varchar(1024) |            |
+| param5_value  |             | varchar(1024) |            |
+
+We have registered a series of tasks that make up a workflow in the master in advance. The following is an example of a record to be registered. The workflow called `sample` consists of four tasks. Register the tasks you want to execute in a series of workflows as records. If you register a workflow, you need to register a series of tasks in `ms_task_definition`.
+
+Actually, the Go program registered in the `program` column is executed by reflection. The tasks that make up your workflow are implemented as Go programs and registered in the master as `program`. This is very useful if you want to use the same task in different workflows.
+
+#### Example
+
+| task_id | task_seq | program             | task_priority | param1_key | param1_value                  | param2_key | param2_value       | ... |
+| ------- | -------- | ------------------- | ------------- | ---------- | ----------------------------- | ---------- | ------------------ | --- |
+| sample  | 1        | Test1               | 10            | NAME       | tsuji                         |            |                    | ... |
+| sample  | 2        | Test2               | 10            |            |                               |            |                    | ... |
+| sample  | 3        | Test3               | 10            |            |                               |            |                    | ... |
+| sample  | 4        | TestHTTPPostRequest | 10            | URL        | https://postman-echo.com/post | BODY       | {"sample": "test"} | ... |
+
+### `kr_task_stat`
+
+`kr_task_stat` is a table that manages the execution of the tasks that make up the workflow. The task is registered as a DAG in `kr_task_stat`.
+
+| Column                | Primary Key | Data type                | Constraint |
+| --------------------- | :---------: | ------------------------ | ---------- |
+| task_flow_id          |     ✔️      | varchar(256)             | NOT NULL   |
+| task_exec_seq         |     ✔️      | numeric                  | NOT NULL   |
+| depends_task_exec_seq |             | numeric                  | NOT NULL   |
+| task_id               |             | varchar(256)             | NOT NULL   |
+| task_seq              |             | numeric                  | NOT NULL   |
+| exec_status           |             | numeric                  | NOT NULL   |
+| task_priority         |             | numeric                  | NOT NULL   |
+| parameters            |             | json                     | NOT NULL   |
+| registered_ts         |             | timestamp with time zone |            |
+| started_ts            |             | timestamp with time zone |            |
+| finished_ts           |             | timestamp with time zone |            |
+| suspended_ts          |             | timestamp with time zone |            |
+
+Note: We can register a task as waiting by executing an HTTP request or a job. Currently, only the following HTTP requests are supported. With the following HTTP request, the task of the workflow registered in `ms_task_definition` is registered in `kr_task_stat` as waiting to be executed.
+
+#### Example
+
+The following curl command is a command to call the execution of the workflow whose task_id is `sample`.
 
 ```
 $ curl -X POST -H 'Content-Type:application/json' localhost:8000/register -i -d '{"taskId": "sample"}'
 ```
 
-The above command registers the task waiting to be executed in `kr_task_stat`. The following records are created. (exec_status = 0 is status to wait execution.)
+The above command registers the workflow as waiting task to be executed in `kr_task_stat`. The following records are created. (exec_status = 0 is status to wait execution.)
 
-| task_flow_id | task_exec_seq | depends_task_exec_seq | task_id | task_seq | exec_status | task_priority |
-| ------------ | ------------- | --------------------- | ------- | -------- | ----------- | ------------- |
-| xxxxxxxxx    | 1             | 0                     | sample  | 1        | 0           | 10            |
-| xxxxxxxxx    | 2             | 1                     | sample  | 2        | 0           | 10            |
-| xxxxxxxxx    | 3             | 2                     | sample  | 3        | 0           | 10            |
+| task_flow_id                         | task_exec_seq | depends_task_exec_seq | task_id | task_seq | exec_status | task_priority | parameters                                                              |
+| ------------------------------------ | ------------- | --------------------- | ------- | -------- | ----------- | ------------- | ----------------------------------------------------------------------- |
+| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 1             | -1                    | sample  | 1        | 3           | 10            | {"NAME":"tsuji"}                                                        |
+| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 2             | 1                     | sample  | 2        | 3           | 10            | {}                                                                      |
+| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 3             | 2                     | sample  | 3        | 3           | 10            | {}                                                                      |
+| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 4             | 3                     | sample  | 4        | 3           | 10            | {"BODY":"{\"sample\": \"test\"}","URL":"https://postman-echo.com/post"} |
+
+## HTTP API
+
+Registration of workflow execution is performed via HTTP API.
+
+Overview of endpoints:
+
+- [`POST /register/{task_id}`]: Registration of workflow to execute.
+
+### `POST /register/{task_id}`
+
+Registration of workflow to execute in `kr_task_stat`.
+
+#### Request
+
+```http
+POST /register/{task_id}
+```
+
+##### Parameters <!-- omit in toc -->
+
+- `task_id` (string,required): Id for registering execution of workflow. Must be registered in `ms_task_definition`.
+
+#### Response
+
+```json
+{
+  "status": "succeeded"
+}
+```
+
+## Author
+
+Tsuji Daishiro
 
 ## LICENSE
 
