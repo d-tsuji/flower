@@ -30,7 +30,8 @@ services:
       - db
     build:
       context: .
-      dockerfile: assets/dockerfiles/register/Dockerfile
+      args:
+        - APP_NAME=register
     command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./register", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower", "-webhost", "0.0.0.0", "-webport", "8000"]
 
   watcher:
@@ -40,5 +41,6 @@ services:
       - db
     build:
       context: .
-      dockerfile: assets/dockerfiles/watcher/Dockerfile
+      args:
+        - APP_NAME=watcher
     command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./watcher", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower"]
