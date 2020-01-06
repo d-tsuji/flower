@@ -29,6 +29,7 @@ func New(url string) *client {
 	}
 }
 
+// Post posts given JSON message to given URL
 func (c *client) Post(payload interface{}) error {
 	var payloadBytes []byte
 	if payload != nil {
@@ -65,6 +66,7 @@ func (c *client) Post(payload interface{}) error {
 	return err
 }
 
+// Get helper which returns response as a byte array
 func (c *client) Get(values url.Values) ([]byte, error) {
 	req, err := http.NewRequest("GET", c.url, nil)
 	if err != nil {

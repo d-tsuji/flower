@@ -7,17 +7,17 @@ import (
 	"github.com/d-tsuji/flower/repository"
 )
 
-var WorkerChannel = make(chan chan repository.ExecutableTask)
+var workerChannel = make(chan chan repository.ExecutableTask)
 
-type Collector struct {
+type collector struct {
 	Work chan repository.ExecutableTask
 }
 
-func StartDispatcher(ctx context.Context, workerCount int, dbClient *repository.DB) Collector {
+func StartDispatcher(ctx context.Context, workerCount int, dbClient *repository.DB) collector {
 	var i int
 	var workers []Worker
 	input := make(chan repository.ExecutableTask)
-	collector := Collector{Work: input}
+	collector := collector{Work: input}
 
 	for i < workerCount {
 		i++
@@ -25,7 +25,7 @@ func StartDispatcher(ctx context.Context, workerCount int, dbClient *repository.
 		worker := Worker{
 			ID:            i,
 			Channel:       make(chan repository.ExecutableTask),
-			WorkerChannel: WorkerChannel,
+			WorkerChannel: workerChannel,
 			DBClient:      dbClient,
 		}
 		worker.Start(ctx)
@@ -37,7 +37,7 @@ func StartDispatcher(ctx context.Context, workerCount int, dbClient *repository.
 		for {
 			select {
 			case work := <-input:
-				worker := <-WorkerChannel
+				worker := <-workerChannel
 				worker <- work
 			}
 		}

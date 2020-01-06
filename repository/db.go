@@ -79,10 +79,17 @@ const (
 	,	task_id
 	,	task_seq
 	,	exec_status
-	,	task_priority)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+	,	task_priority
+	,	registered_ts
+	,	started_ts
+	,	finished_ts
+	,	suspended_ts
+	)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp, null, null, null);`
 	selectUpdateExecutableTaskLock = `SELECT * FROM kr_task_stat WHERE task_flow_id = $1 and task_exec_seq = $2 and exec_status = $3 FOR UPDATE;`
-	updateExecutableTask           = `UPDATE kr_task_stat SET exec_status = $1 WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
+	updateExecutableTaskRunning    = `UPDATE kr_task_stat SET exec_status = $1, started_ts    = current_timestamp WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
+	updateExecutableTaskFinished   = `UPDATE kr_task_stat SET exec_status = $1, finished_ts   = current_timestamp WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
+	updateExecutableTaskSuspended  = `UPDATE kr_task_stat SET exec_status = $1, suspended_ts  = current_timestamp WHERE task_flow_id = $2 and task_exec_seq = $3 and exec_status = $4;`
 )
 
 // DB represents a Database handler.
@@ -221,28 +228,26 @@ func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
 func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e ExecutableTask) (bool, error) {
 	var ok bool
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
-		return t.updateExecutableTasks(ctx, e, ExecStatusWait, ExecStatusRunning, &ok)
+		return t.updateExecutableTasksRunning(ctx, e, ExecStatusWait, ExecStatusRunning, &ok)
 	})
 	return ok, err
 }
 
 // UpdateExecutableTasksRunning updates the status of tasks to finished.
-func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTask) (bool, error) {
-	var ok bool
+func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTask) error {
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
-		return t.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusFinish, &ok)
+		return t.updateExecutableTasksFinished(ctx, e, ExecStatusRunning, ExecStatusFinish)
 	})
-	return ok, err
+	return err
 }
 
 // UpdateExecutableTasksRunning updates the status of a task to suspended.
-func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e ExecutableTask) (bool, error) {
-	var ok bool
+func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e ExecutableTask) error {
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
-		err := t.updateExecutableTasks(ctx, e, ExecStatusRunning, ExecStatusSuspend, &ok)
+		err := t.updateExecutableTasksSuspended(ctx, e, ExecStatusRunning, ExecStatusSuspend)
 		return err
 	})
-	return ok, err
+	return err
 }
 
 // GetTaskProgramName gets the name of the program to be executed from taskId and taskSeq.

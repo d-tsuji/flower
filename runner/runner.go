@@ -28,13 +28,13 @@ func (r *runner) Run(ctx context.Context) error {
 	// TODO: handle response params
 	_, err := r.runTask(ctx)
 	if err != nil {
-		if _, err := r.db.UpdateExecutableTasksSuspended(ctx, r.task); err != nil {
+		if err := r.db.UpdateExecutableTasksSuspended(ctx, r.task); err != nil {
 			return errors.WithStack(err)
 		}
 		return errors.WithStack(err)
 	}
 
-	if _, err = r.db.UpdateExecutableTasksFinished(ctx, r.task); err != nil {
+	if err = r.db.UpdateExecutableTasksFinished(ctx, r.task); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

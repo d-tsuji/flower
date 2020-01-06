@@ -67,7 +67,7 @@ func (t *adminTX) Close() error {
 // AdminTXFunc is the signature for functions passed to ReadWriteTransaction.
 type AdminTXFunc func(context.Context, *adminTX) error
 
-func (t *adminTX) updateExecutableTasks(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int, ok *bool) error {
+func (t *adminTX) updateExecutableTasksRunning(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int, ok *bool) error {
 	// Acquire a lock for updating a record.
 	stmtUpdateExecutableTaskLock, err := t.tx.PrepareContext(ctx, selectUpdateExecutableTaskLock)
 	if err != nil {
@@ -91,7 +91,7 @@ func (t *adminTX) updateExecutableTasks(ctx context.Context, e ExecutableTask, b
 	}
 
 	// Updates the record that acquired the lock.
-	stmtUpdateExecutableTask, err := t.tx.PrepareContext(ctx, updateExecutableTask)
+	stmtUpdateExecutableTask, err := t.tx.PrepareContext(ctx, updateExecutableTaskRunning)
 	if err != nil {
 		*ok = false
 		return errors.New(fmt.Sprintf("query prepare error 'UPDATE kr_task_stat': %v", err))
@@ -103,6 +103,34 @@ func (t *adminTX) updateExecutableTasks(ctx context.Context, e ExecutableTask, b
 		return errors.New(fmt.Sprintf("query error: %v", err))
 	}
 	*ok = true
+	return nil
+}
+
+func (t *adminTX) updateExecutableTasksFinished(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int) error {
+	// Updates the record that acquired the lock.
+	stmtUpdateExecutableTask, err := t.tx.PrepareContext(ctx, updateExecutableTaskFinished)
+	if err != nil {
+		return errors.New(fmt.Sprintf("query prepare error: %v", err))
+	}
+	defer stmtUpdateExecutableTask.Close()
+	_, err = stmtUpdateExecutableTask.ExecContext(ctx, afterTaskStatus, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
+	if err != nil {
+		return errors.New(fmt.Sprintf("query error: %v", err))
+	}
+	return nil
+}
+
+func (t *adminTX) updateExecutableTasksSuspended(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int) error {
+	// Updates the record that acquired the lock.
+	stmtUpdateExecutableTask, err := t.tx.PrepareContext(ctx, updateExecutableTaskSuspended)
+	if err != nil {
+		return errors.New(fmt.Sprintf("query prepare error: %v", err))
+	}
+	defer stmtUpdateExecutableTask.Close()
+	_, err = stmtUpdateExecutableTask.ExecContext(ctx, afterTaskStatus, e.TaskFlowId, e.TaskExecSeq, beforeTaskStatus)
+	if err != nil {
+		return errors.New(fmt.Sprintf("query error: %v", err))
+	}
 	return nil
 }
 
