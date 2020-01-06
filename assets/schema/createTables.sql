@@ -38,3 +38,6 @@ CREATE TABLE IF NOT EXISTS ms_task_definition (
 INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority, param1_key, param1_value, param2_key, param2_value) VALUES ('sample', 1, 'Test1', 10, 'hoge', 'huga', 'piyo', 'foo123');
 INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority) VALUES ('sample', 2, 'Test2', 10);
 INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority) VALUES ('sample', 3, 'Test3', 10);
+INSERT INTO
+    ms_task_definition(task_id, task_seq, program, task_priority, param1_key, param1_value, param2_key, param2_value)
+VALUES ('sample', 4, 'TestHTTPPostRequest', 10, 'URL', 'https://postman-echo.com/post', 'BODY', '{"sample": "test"}');
