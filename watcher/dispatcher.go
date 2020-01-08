@@ -14,19 +14,17 @@ type collector struct {
 }
 
 func StartDispatcher(ctx context.Context, workerCount int, dbClient *repository.DB) collector {
-	var i int
 	var workers []Worker
 	input := make(chan repository.ExecutableTask)
 	collector := collector{Work: input}
 
-	for i < workerCount {
-		i++
+	for i := 0; i < workerCount; i++ {
 		log.Printf("[dispatcher] starting worker: %d\n", i)
 		worker := Worker{
-			ID:            i,
+			id:            i,
 			Channel:       make(chan repository.ExecutableTask),
 			WorkerChannel: workerChannel,
-			DBClient:      dbClient,
+			dbClient:      dbClient,
 		}
 		worker.Start(ctx)
 		workers = append(workers, worker)

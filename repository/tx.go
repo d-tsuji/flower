@@ -67,7 +67,7 @@ func (t *adminTX) Close() error {
 // AdminTXFunc is the signature for functions passed to ReadWriteTransaction.
 type AdminTXFunc func(context.Context, *adminTX) error
 
-func (t *adminTX) updateExecutableTasksRunning(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int, ok *bool) error {
+func (t *adminTX) updateExecutableTasksRunning(ctx context.Context, e *ExecutableTask, beforeTaskStatus, afterTaskStatus int, ok *bool) error {
 	// Acquire a lock for updating a record.
 	stmtUpdateExecutableTaskLock, err := t.tx.PrepareContext(ctx, selectUpdateExecutableTaskLock)
 	if err != nil {
@@ -106,7 +106,7 @@ func (t *adminTX) updateExecutableTasksRunning(ctx context.Context, e Executable
 	return nil
 }
 
-func (t *adminTX) updateExecutableTasksFinished(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int) error {
+func (t *adminTX) updateExecutableTasksFinished(ctx context.Context, e *ExecutableTask, beforeTaskStatus, afterTaskStatus int) error {
 	// Updates the record that acquired the lock.
 	stmtUpdateExecutableTask, err := t.tx.PrepareContext(ctx, updateExecutableTaskFinished)
 	if err != nil {
@@ -120,7 +120,7 @@ func (t *adminTX) updateExecutableTasksFinished(ctx context.Context, e Executabl
 	return nil
 }
 
-func (t *adminTX) updateExecutableTasksSuspended(ctx context.Context, e ExecutableTask, beforeTaskStatus, afterTaskStatus int) error {
+func (t *adminTX) updateExecutableTasksSuspended(ctx context.Context, e *ExecutableTask, beforeTaskStatus, afterTaskStatus int) error {
 	// Updates the record that acquired the lock.
 	stmtUpdateExecutableTask, err := t.tx.PrepareContext(ctx, updateExecutableTaskSuspended)
 	if err != nil {

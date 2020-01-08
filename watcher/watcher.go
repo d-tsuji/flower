@@ -37,8 +37,8 @@ func (w *watcherTask) WatchTask(ctx context.Context, concurrency int) error {
 	}
 
 	var runTasks []repository.ExecutableTask
-	for _, wt := range waitingTasks {
-		ok, err := w.db.UpdateExecutableTasksRunning(ctx, wt)
+	for _, waitingTask := range waitingTasks {
+		ok, err := w.db.UpdateExecutableTasksRunning(ctx, &waitingTask)
 		if err != nil {
 			return errors.WithStack(err)
 		}
@@ -47,7 +47,7 @@ func (w *watcherTask) WatchTask(ctx context.Context, concurrency int) error {
 		if !ok {
 			continue
 		}
-		runTasks = append(runTasks, wt)
+		runTasks = append(runTasks, waitingTask)
 	}
 
 	// Put to worker as execution task.

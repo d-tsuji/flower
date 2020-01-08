@@ -29,7 +29,7 @@ func New(url string) *client {
 	}
 }
 
-func (e *executor) HTTPPostRequest() error {
+func (e *component) HTTPPostRequest() error {
 	url, ok := e.params["URL"]
 	if !ok {
 		return errors.New("executor param does not contain URL err.")
@@ -44,7 +44,7 @@ func (e *executor) HTTPPostRequest() error {
 	if err := client.post(body); err != nil {
 		return errors.New(fmt.Sprintf("post request error. url: %s.", url))
 	}
-	log.Printf("[executor] completed HTTPPostRequest. url: %s", url)
+	log.Printf("[component] completed HTTPPostRequest. url: %s", url)
 	return nil
 }
 

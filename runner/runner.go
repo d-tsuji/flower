@@ -31,13 +31,13 @@ func (r *runner) Run(ctx context.Context) error {
 	// TODO: handle response params
 	_, err := r.runTask(ctx)
 	if err != nil {
-		if err := r.db.UpdateExecutableTasksSuspended(ctx, r.task); err != nil {
+		if err := r.db.UpdateExecutableTasksSuspended(ctx, &r.task); err != nil {
 			return errors.WithStack(err)
 		}
 		return errors.WithStack(err)
 	}
 
-	if err = r.db.UpdateExecutableTasksFinished(ctx, r.task); err != nil {
+	if err = r.db.UpdateExecutableTasksFinished(ctx, &r.task); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil
@@ -53,8 +53,8 @@ func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	executor := component.NewExecutor(r.task.Params)
-	method := reflect.ValueOf(executor).MethodByName(programName)
+	component := component.NewComponent(r.task.Params)
+	method := reflect.ValueOf(component).MethodByName(programName)
 	values := method.Call(nil)
 
 	return values, nil

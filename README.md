@@ -114,8 +114,8 @@ Note: We can register a task as waiting by executing an HTTP request or a job. C
 
 The following curl command is a command to call the execution of the workflow whose task_id is `example`.
 
-```
-$ curl -X POST -H 'Content-Type:application/json' localhost:8000/register/example
+```console
+$ curl -X POST localhost:8000/register/example
 ```
 
 The above command registers the workflow as waiting task to be executed in `kr_task_stat`. The following records are created.

@@ -226,7 +226,7 @@ func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
 }
 
 // UpdateExecutableTasksRunning updates task status to running.
-func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e ExecutableTask) (bool, error) {
+func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e *ExecutableTask) (bool, error) {
 	var ok bool
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
 		return t.updateExecutableTasksRunning(ctx, e, ExecStatusWait, ExecStatusRunning, &ok)
@@ -235,7 +235,7 @@ func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e ExecutableTask
 }
 
 // UpdateExecutableTasksRunning updates the status of tasks to finished.
-func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTask) error {
+func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e *ExecutableTask) error {
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
 		return t.updateExecutableTasksFinished(ctx, e, ExecStatusRunning, ExecStatusFinish)
 	})
@@ -243,7 +243,7 @@ func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e ExecutableTas
 }
 
 // UpdateExecutableTasksRunning updates the status of a task to suspended.
-func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e ExecutableTask) error {
+func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e *ExecutableTask) error {
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
 		err := t.updateExecutableTasksSuspended(ctx, e, ExecStatusRunning, ExecStatusSuspend)
 		return err

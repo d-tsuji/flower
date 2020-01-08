@@ -9,10 +9,10 @@ import (
 )
 
 type Worker struct {
-	ID            int
+	id            int
 	WorkerChannel chan chan repository.ExecutableTask
 	Channel       chan repository.ExecutableTask
-	DBClient      *repository.DB
+	dbClient      *repository.DB
 }
 
 // start worker
@@ -23,12 +23,12 @@ func (w *Worker) Start(ctx context.Context) {
 			w.WorkerChannel <- w.Channel
 			select {
 			case job := <-w.Channel:
-				r := runner.NewRunner(job, w.DBClient)
+				r := runner.NewRunner(job, w.dbClient)
 				if err := r.Run(ctx); err != nil {
 					log.Printf("[worker] runner.Run() is failed. err: %v\n", err)
 				}
 			case <-ctx.Done():
-				log.Printf("[worker] worker [%d] is stopping\n", w.ID)
+				log.Printf("[worker] worker [%d] is stopping\n", w.id)
 				return
 			}
 		}
