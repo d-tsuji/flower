@@ -9,6 +9,7 @@ services:
     environment:
       - POSTGRES_USER=flower
       - POSTGRES_DB=flower
+      - TZ=Asia/Tokyo
     tty: true
     restart: always
     user: postgres

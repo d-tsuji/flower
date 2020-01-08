@@ -77,17 +77,17 @@ Flower consists of two main tables. **ms_task_definition** and **kr_task_stat**.
 | param5_key    |             | varchar(1024) |            |
 | param5_value  |             | varchar(1024) |            |
 
-We have registered a series of tasks that make up a workflow in the master in advance. The following is an example of a record to be registered. The workflow called `sample` consists of four tasks. Register the tasks you want to execute in a series of workflows as records. If you register a workflow, you need to register a series of tasks in `ms_task_definition`.
+We have registered a series of tasks that make up a workflow in the master in advance. The following is an example of a record to be registered. The workflow called `example` consists of three tasks. Register the tasks you want to execute in a series of workflows as records. If you register a workflow, you need to register a series of tasks in `ms_task_definition`.
 
 Actually, the Go program registered in the `program` column is executed by reflection. The tasks that make up your workflow are implemented as Go programs and registered in the master as `program`. This is very useful if you want to use the same task in different workflows.
 
 #### Example
 
-| task_id | task_seq | program             | task_priority | param1_key        | param1_value                  | param2_key | param2_value       | ... |
-| ------- | -------- | ------------------- | ------------- | ----------------- | ----------------------------- | ---------- | ------------------ | --- |
-| sample  | 1        | EchoRandomTimeSleep | 10            |                   |                               |            |                    | ... |
-| sample  | 2        | EchoParamTimeSleep  | 10            | SLEEP_TIME_SECOND | 3                             |            |                    | ... |
-| sample  | 3        | HTTPPostRequest     | 10            | URL               | https://postman-echo.com/post | BODY       | {"sample": "test"} | ... |
+| task_id | task_seq | program             | task_priority | param1_key        | param1_value                  | param2_key | param2_value   | ... |
+| ------- | -------- | ------------------- | ------------- | ----------------- | ----------------------------- | ---------- | -------------- | --- |
+| example | 1        | EchoRandomTimeSleep | 10            |                   |                               |            |                | ... |
+| example | 2        | EchoParamTimeSleep  | 10            | SLEEP_TIME_SECOND | 3                             |            |                | ... |
+| example | 3        | HTTPPostRequest     | 10            | URL               | https://postman-echo.com/post | BODY       | {"id": "test"} | ... |
 
 ### `kr_task_stat`
 
@@ -112,19 +112,19 @@ Note: We can register a task as waiting by executing an HTTP request or a job. C
 
 #### Example
 
-The following curl command is a command to call the execution of the workflow whose task_id is `sample`.
+The following curl command is a command to call the execution of the workflow whose task_id is `example`.
 
 ```
-$ curl -X POST -H 'Content-Type:application/json' localhost:8000/register -i -d '{"taskId": "sample"}'
+$ curl -X POST -H 'Content-Type:application/json' localhost:8000/register/example
 ```
 
 The above command registers the workflow as waiting task to be executed in `kr_task_stat`. The following records are created.
 
-| task_flow_id                         | task_exec_seq | depends_task_exec_seq | task_id | task_seq | exec_status | task_priority | parameters                                                              |
-| ------------------------------------ | ------------- | --------------------- | ------- | -------- | ----------- | ------------- | ----------------------------------------------------------------------- |
-| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 1             | -1                    | sample  | 1        | 3           | 0             | {}                                                                      |
-| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 2             | 1                     | sample  | 2        | 1           | 0             | {"SLEEP_TIME_SECOND":"3"}                                               |
-| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 3             | 2                     | sample  | 3        | 0           | 0             | {"BODY":"{\"sample\": \"test\"}","URL":"https://postman-echo.com/post"} |
+| task_flow_id                         | task_exec_seq | depends_task_exec_seq | task_id | task_seq | exec_status | task_priority | parameters                                                          |
+| ------------------------------------ | ------------- | --------------------- | ------- | -------- | ----------- | ------------- | ------------------------------------------------------------------- |
+| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 1             | -1                    | example | 1        | 3           | 0             | {}                                                                  |
+| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 2             | 1                     | example | 2        | 1           | 0             | {"SLEEP_TIME_SECOND":"3"}                                           |
+| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 3             | 2                     | example | 3        | 0           | 0             | {"BODY":"{\"id\": \"test\"}","URL":"https://postman-echo.com/post"} |
 
 `task_status` is a value indicating the task execution status as follows.
 
@@ -142,7 +142,7 @@ Registration of workflow execution is performed via HTTP API.
 
 Overview of endpoints:
 
-- [`POST /register/{task_id}`]: Registration of workflow to execute.
+- [`POST /register/{task_id}`](#post-registertask_id): Registration of workflow to execute.
 
 ### `POST /register/{task_id}`
 
@@ -162,7 +162,8 @@ POST /register/{task_id}
 
 ```json
 {
-  "status": "succeeded"
+  "status": "succeeded",
+  "taskId": "`task_id`"
 }
 ```
 
