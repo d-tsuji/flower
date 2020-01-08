@@ -5,6 +5,8 @@ import (
 	"log"
 	"reflect"
 
+	"github.com/d-tsuji/flower/component"
+
 	"github.com/d-tsuji/flower/repository"
 	"github.com/pkg/errors"
 )
@@ -50,7 +52,7 @@ func (r *runner) runTask(ctx context.Context) ([]reflect.Value, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	executor := NewExecutor(r.task.Params)
+	executor := component.NewExecutor(r.task.Params)
 	method := reflect.ValueOf(executor).MethodByName(programName)
 	values := method.Call(nil)
 

@@ -1,4 +1,4 @@
-package runner
+package component
 
 // Executor is a struct for executing tasks.
 type executor struct {

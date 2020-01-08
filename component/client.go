@@ -1,4 +1,4 @@
-package http
+package component
 
 import (
 	"bytes"
@@ -29,8 +29,27 @@ func New(url string) *client {
 	}
 }
 
+func (e *executor) HTTPPostRequest() error {
+	url, ok := e.params["URL"]
+	if !ok {
+		return errors.New("executor param does not contain URL err.")
+	}
+	body, _ := e.params["BODY"]
+	var dummy map[string]interface{}
+	if err := json.Unmarshal([]byte(body), &dummy); err != nil {
+		return errors.New("params BODY is not json format.")
+	}
+
+	client := New(url)
+	if err := client.post(body); err != nil {
+		return errors.New(fmt.Sprintf("post request error. url: %s.", url))
+	}
+	log.Printf("[executor] completed HTTPPostRequest. url: %s", url)
+	return nil
+}
+
 // Post posts given JSON message to given URL
-func (c *client) Post(payload interface{}) error {
+func (c *client) post(payload interface{}) error {
 	var payloadBytes []byte
 	if payload != nil {
 		b, err := json.Marshal(payload)
@@ -67,7 +86,7 @@ func (c *client) Post(payload interface{}) error {
 }
 
 // Get helper which returns response as a byte array
-func (c *client) Get(values url.Values) ([]byte, error) {
+func (c *client) get(values url.Values) ([]byte, error) {
 	req, err := http.NewRequest("GET", c.url, nil)
 	if err != nil {
 		return nil, errors.WithStack(err)

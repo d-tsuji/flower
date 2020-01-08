@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS kr_task_stat (
 ,   task_id                   varchar(256) NOT NULL
 ,   task_seq                  numeric NOT NULL
 ,   exec_status               numeric NOT NULL
-,   task_priority             numeric NOT NULL
+,   task_priority             numeric NOT NULL DEFAULT 0 CHECK (-20 <= task_priority AND task_priority < 20)
 ,   parameters                json NOT NULL -- json is not null but empty json
 ,   registered_ts            timestamp with time zone
 ,   started_ts               timestamp with time zone
@@ -37,10 +37,3 @@ CREATE TABLE IF NOT EXISTS kr_task_stat (
 
 ,   PRIMARY KEY (task_flow_id, task_exec_seq)
 );
-
--- Test record
-INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority, param1_key, param1_value, param2_key, param2_value) VALUES ('sample', 1, 'Test1', 10, 'hoge', 'huga', 'piyo', 'foo123');
-INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority) VALUES ('sample', 2, 'Test2', 10);
-INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority) VALUES ('sample', 3, 'Test3', 10);
-INSERT INTO ms_task_definition(task_id, task_seq, program, task_priority, param1_key, param1_value, param2_key, param2_value)
-VALUES ('sample', 4, 'TestHTTPPostRequest', 10, 'URL', 'https://postman-echo.com/post', 'BODY', '{"sample": "test"}');

@@ -83,12 +83,11 @@ Actually, the Go program registered in the `program` column is executed by refle
 
 #### Example
 
-| task_id | task_seq | program             | task_priority | param1_key | param1_value                  | param2_key | param2_value       | ... |
-| ------- | -------- | ------------------- | ------------- | ---------- | ----------------------------- | ---------- | ------------------ | --- |
-| sample  | 1        | Test1               | 10            | NAME       | tsuji                         |            |                    | ... |
-| sample  | 2        | Test2               | 10            |            |                               |            |                    | ... |
-| sample  | 3        | Test3               | 10            |            |                               |            |                    | ... |
-| sample  | 4        | TestHTTPPostRequest | 10            | URL        | https://postman-echo.com/post | BODY       | {"sample": "test"} | ... |
+| task_id | task_seq | program             | task_priority | param1_key        | param1_value                  | param2_key | param2_value       | ... |
+| ------- | -------- | ------------------- | ------------- | ----------------- | ----------------------------- | ---------- | ------------------ | --- |
+| sample  | 1        | EchoRandomTimeSleep | 10            |                   |                               |            |                    | ... |
+| sample  | 2        | EchoParamTimeSleep  | 10            | SLEEP_TIME_SECOND | 3                             |            |                    | ... |
+| sample  | 3        | HTTPPostRequest     | 10            | URL               | https://postman-echo.com/post | BODY       | {"sample": "test"} | ... |
 
 ### `kr_task_stat`
 
@@ -119,14 +118,23 @@ The following curl command is a command to call the execution of the workflow wh
 $ curl -X POST -H 'Content-Type:application/json' localhost:8000/register -i -d '{"taskId": "sample"}'
 ```
 
-The above command registers the workflow as waiting task to be executed in `kr_task_stat`. The following records are created. (exec_status = 0 is status to wait execution.)
+The above command registers the workflow as waiting task to be executed in `kr_task_stat`. The following records are created.
 
 | task_flow_id                         | task_exec_seq | depends_task_exec_seq | task_id | task_seq | exec_status | task_priority | parameters                                                              |
 | ------------------------------------ | ------------- | --------------------- | ------- | -------- | ----------- | ------------- | ----------------------------------------------------------------------- |
-| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 1             | -1                    | sample  | 1        | 3           | 10            | {"NAME":"tsuji"}                                                        |
-| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 2             | 1                     | sample  | 2        | 3           | 10            | {}                                                                      |
-| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 3             | 2                     | sample  | 3        | 3           | 10            | {}                                                                      |
-| 4bc6cc67-307c-11ea-86f9-0242ac1d0004 | 4             | 3                     | sample  | 4        | 3           | 10            | {"BODY":"{\"sample\": \"test\"}","URL":"https://postman-echo.com/post"} |
+| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 1             | -1                    | sample  | 1        | 3           | 0             | {}                                                                      |
+| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 2             | 1                     | sample  | 2        | 1           | 0             | {"SLEEP_TIME_SECOND":"3"}                                               |
+| da03a7a9-31e5-11ea-8ff9-0242ac1f0003 | 3             | 2                     | sample  | 3        | 0           | 0             | {"BODY":"{\"sample\": \"test\"}","URL":"https://postman-echo.com/post"} |
+
+`task_status` is a value indicating the task execution status as follows.
+
+| value | status  | description                                      |
+| ----- | ------- | ------------------------------------------------ |
+| 0     | Wait    | The task that are waiting to be executed         |
+| 1     | Running | The task in Running                              |
+| 2     | Suspend | The task that has been suspended for some reason |
+| 3     | Finish  | The task finished                                |
+| 9     | Ignore  | The task ignored                                 |
 
 ## HTTP API
 
