@@ -1,3 +1,4 @@
+// register is a package related to workflow registration
 package register
 
 import (

@@ -1,3 +1,4 @@
+// component is the implementation of the method that is executed as a task in the workflow
 package component
 
 // Executor is a struct for executing tasks.

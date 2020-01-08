@@ -1,3 +1,4 @@
+// repository is a package that handles database related sources
 package repository
 
 import (

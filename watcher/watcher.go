@@ -1,3 +1,4 @@
+// watcher is a package that monitors workflows and controls tasks
 package watcher
 
 import (
