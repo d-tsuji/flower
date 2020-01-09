@@ -18,7 +18,8 @@ type client struct {
 	httpClient *http.Client
 }
 
-func New(url string) *client {
+// NewClient creates a new http client.
+func NewClient(url string) *client {
 	if strings.HasSuffix(url, "/") {
 		url = url[:len(url)-1]
 	}
@@ -29,18 +30,18 @@ func New(url string) *client {
 	}
 }
 
-func (e *component) HTTPPostRequest() error {
-	url, ok := e.params["URL"]
+func (c *component) HTTPPostRequest() error {
+	url, ok := c.params["URL"]
 	if !ok {
 		return errors.New("executor param does not contain URL err.")
 	}
-	body, _ := e.params["BODY"]
+	body, _ := c.params["BODY"]
 	var dummy map[string]interface{}
 	if err := json.Unmarshal([]byte(body), &dummy); err != nil {
 		return errors.New("params BODY is not json format.")
 	}
 
-	client := New(url)
+	client := NewClient(url)
 	if err := client.post(body); err != nil {
 		return errors.New(fmt.Sprintf("post request error. url: %s.", url))
 	}

@@ -10,7 +10,7 @@ import (
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func (e *component) EchoRandomTimeSleep() error {
+func (c *component) EchoRandomTimeSleep() error {
 	randTime := random.Intn(5) + 1
 
 	fmt.Printf("[component] start EchoRandomTimeSleep. (%v second sleep)\n", randTime)
@@ -20,8 +20,8 @@ func (e *component) EchoRandomTimeSleep() error {
 	return nil
 }
 
-func (e *component) EchoParamTimeSleep() error {
-	sleepTimeStr, ok := e.params["SLEEP_TIME_SECOND"]
+func (c *component) EchoParamTimeSleep() error {
+	sleepTimeStr, ok := c.params["SLEEP_TIME_SECOND"]
 	if !ok {
 		return errors.New("EchoParamTimeSleep() required SLEEP_TIME_SECOND parameter")
 	}

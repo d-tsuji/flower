@@ -14,12 +14,12 @@ import (
 
 // Runner is a struct for executing tasks.
 type runner struct {
-	task repository.ExecutableTask
+	task *repository.ExecutableTask
 	db   *repository.DB
 }
 
-// NewServer creates a new Runner.
-func NewRunner(task repository.ExecutableTask, db *repository.DB) *runner {
+// NewRunner creates a new Runner.
+func NewRunner(task *repository.ExecutableTask, db *repository.DB) *runner {
 	return &runner{
 		task: task,
 		db:   db,
@@ -31,13 +31,13 @@ func (r *runner) Run(ctx context.Context) error {
 	// TODO: handle response params
 	_, err := r.runTask(ctx)
 	if err != nil {
-		if err := r.db.UpdateExecutableTasksSuspended(ctx, &r.task); err != nil {
+		if err := r.db.UpdateExecutableTasksSuspended(ctx, r.task); err != nil {
 			return errors.WithStack(err)
 		}
 		return errors.WithStack(err)
 	}
 
-	if err = r.db.UpdateExecutableTasksFinished(ctx, &r.task); err != nil {
+	if err = r.db.UpdateExecutableTasksFinished(ctx, r.task); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

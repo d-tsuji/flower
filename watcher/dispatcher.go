@@ -13,6 +13,8 @@ type collector struct {
 	Work chan repository.ExecutableTask
 }
 
+// StartDispatcher starts workerCount number of workers. In addition,
+// wait for repository.ExecutableTask to be input to channel,and dispatch the task to worker.
 func StartDispatcher(ctx context.Context, workerCount int, dbClient *repository.DB) collector {
 	var workers []Worker
 	input := make(chan repository.ExecutableTask)

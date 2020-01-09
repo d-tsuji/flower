@@ -1,5 +1,4 @@
 -- Master table that manages the tasks that make up the workflow
-DROP TABLE IF EXISTS ms_task_definition;
 CREATE TABLE IF NOT EXISTS ms_task_definition (
     task_id                  varchar(256) NOT NULL
 ,   task_seq                 numeric NOT NULL
@@ -20,7 +19,6 @@ CREATE TABLE IF NOT EXISTS ms_task_definition (
 );
 
 -- Status management table for task execution
-DROP TABLE IF EXISTS kr_task_stat;
 CREATE TABLE IF NOT EXISTS kr_task_stat (
     task_flow_id              varchar(256) NOT NULL
 ,   task_exec_seq             numeric NOT NULL

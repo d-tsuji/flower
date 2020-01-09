@@ -8,6 +8,8 @@ import (
 	"github.com/d-tsuji/flower/runner"
 )
 
+// Workers play the role of workers in the Worker-Pools model.
+// The structure that executes the task is runner.
 type Worker struct {
 	id            int
 	WorkerChannel chan chan repository.ExecutableTask
@@ -15,7 +17,7 @@ type Worker struct {
 	dbClient      *repository.DB
 }
 
-// start worker
+// Start makes one worker start.
 func (w *Worker) Start(ctx context.Context) {
 	go func() {
 		for {
@@ -23,7 +25,7 @@ func (w *Worker) Start(ctx context.Context) {
 			w.WorkerChannel <- w.Channel
 			select {
 			case job := <-w.Channel:
-				r := runner.NewRunner(job, w.dbClient)
+				r := runner.NewRunner(&job, w.dbClient)
 				if err := r.Run(ctx); err != nil {
 					log.Printf("[worker] runner.Run() is failed. err: %v\n", err)
 				}

@@ -252,7 +252,7 @@ func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e *ExecutableT
 }
 
 // GetTaskProgramName gets the name of the program to be executed from taskId and taskSeq.
-func (db *DB) GetTaskProgramName(ctx context.Context, task ExecutableTask) (string, error) {
+func (db *DB) GetTaskProgramName(ctx context.Context, task *ExecutableTask) (string, error) {
 	var programName string
 	rows, err := db.QueryContext(ctx, selectTaskProgramName, task.TaskId, task.TaskSeq)
 	if err != nil {
