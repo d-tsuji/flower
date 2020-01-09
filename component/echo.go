@@ -1,11 +1,12 @@
 package component
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 var random = rand.New(rand.NewSource(time.Now().UnixNano()))

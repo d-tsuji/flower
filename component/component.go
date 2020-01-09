@@ -1,4 +1,4 @@
-// component is the implementation of the method that is executed as a task in the workflow.
+// Package component is the implementation of the method that is executed as a task in the workflow.
 //
 // The task corresponds to a method of one component structure.
 // Task methods are implemented as follows:

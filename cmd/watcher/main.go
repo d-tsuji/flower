@@ -12,8 +12,17 @@ import (
 )
 
 const (
-	WORKER_COUNT            = 5
-	DB_CONCURRENCY          = WORKER_COUNT
+	// WORKER_COUNT is the number of workers in the worker-pool model.
+	// It is the same as the number of tasks that can be executed in parallel.
+	WORKER_COUNT = 5
+
+	// DB_CONCURRENCY is the number of tasks to fetch executable
+	// tasks and put to workers. It is usually recommended to be
+	// the same as WORKER_COUNT.
+	DB_CONCURRENCY = WORKER_COUNT
+
+	// POLLING_INTERVAL_SECOND is the interval for monitoring
+	// tasks that can be executed from Database.
 	POLLING_INTERVAL_SECOND = 5
 )
 

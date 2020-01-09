@@ -1,4 +1,4 @@
-// runner is a package for executing tasks
+// Package runner is a package for executing tasks
 package runner
 
 import (

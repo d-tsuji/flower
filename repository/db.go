@@ -1,4 +1,4 @@
-// repository is a package that handles database related sources
+// Package repository is a package that handles database related sources
 package repository
 
 import (
@@ -234,7 +234,7 @@ func (db *DB) UpdateExecutableTasksRunning(ctx context.Context, e *ExecutableTas
 	return ok, err
 }
 
-// UpdateExecutableTasksRunning updates the status of tasks to finished.
+// UpdateExecutableTasksFinished updates the status of tasks to finished.
 func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e *ExecutableTask) error {
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
 		return t.updateExecutableTasksFinished(ctx, e, ExecStatusRunning, ExecStatusFinish)
@@ -242,7 +242,7 @@ func (db *DB) UpdateExecutableTasksFinished(ctx context.Context, e *ExecutableTa
 	return err
 }
 
-// UpdateExecutableTasksRunning updates the status of a task to suspended.
+// UpdateExecutableTasksSuspended updates the status of a task to suspended.
 func (db *DB) UpdateExecutableTasksSuspended(ctx context.Context, e *ExecutableTask) error {
 	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
 		err := t.updateExecutableTasksSuspended(ctx, e, ExecStatusRunning, ExecStatusSuspend)

@@ -8,7 +8,7 @@ import (
 	"github.com/d-tsuji/flower/runner"
 )
 
-// Workers play the role of workers in the Worker-Pools model.
+// Worker play the role of workers in the Worker-Pools model.
 // The structure that executes the task is runner.
 type Worker struct {
 	id            int
