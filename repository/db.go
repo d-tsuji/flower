@@ -42,7 +42,7 @@ const (
 		FROM ms_task_definition WHERE task_id = $1;`
 	selectTaskProgramName = `SELECT program FROM ms_task_definition WHERE task_id = $1 AND task_seq = $2;`
 	selectExecutableTask  = `
-		SELECT
+		SELECT DISTINCT ON (base.task_id)
 			base.task_flow_id
 		,	base.task_exec_seq
 		,	base.task_id
@@ -70,7 +70,8 @@ const (
 				WHERE	base.exec_status = 1 OR (COALESCE(dep.exec_status, 3) = 3 AND base.exec_status = 0)
 			)base
 		-- Control within the number of concurrent executions
-		WHERE rowno <= $1 AND base.exec_status = 0;`
+		WHERE rowno <= $1 AND base.exec_status = 0
+		ORDER BY base.task_id, base.task_exec_seq DESC, base.task_flow_id;`
 	insertExecutableTasks = `
 	INSERT INTO kr_task_stat(
 		task_flow_id

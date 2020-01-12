@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS ms_task_definition (
     task_id                  varchar(256) NOT NULL
 ,   task_seq                 numeric NOT NULL
 ,   program                  varchar(256) NOT NULL
-,   task_priority            numeric NOT NULL
+,   task_priority            numeric DEFAULT 0 NOT NULL CHECK (-20 <= task_priority AND task_priority < 20)
 ,   param1_key               varchar(1024)
 ,   param1_value             varchar(1024)
 ,   param2_key               varchar(1024)
@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS kr_task_stat (
 ,   task_id                   varchar(256) NOT NULL
 ,   task_seq                  numeric NOT NULL
 ,   exec_status               numeric NOT NULL
-,   task_priority             numeric NOT NULL DEFAULT 0 CHECK (-20 <= task_priority AND task_priority < 20)
+-- ,   task_priority             numeric DEFAULT 0 NOT NULL CHECK (-20 <= task_priority AND task_priority < 20)
+,   task_priority             numeric DEFAULT 0 NOT NULL CHECK (-20 <= task_priority AND task_priority < 20)
 ,   parameters                json NOT NULL -- json is not null but empty json
 ,   registered_ts            timestamp with time zone
 ,   started_ts               timestamp with time zone
