@@ -134,28 +134,6 @@ func (t *adminTX) updateExecutableTasksSuspended(ctx context.Context, e *Executa
 	return nil
 }
 
-func (t *adminTX) getRegisterTask(ctx context.Context, taskId string) ([]task, error) {
-	var tasks []task
-	rows, err := t.tx.QueryContext(ctx, selectRegisterTask, taskId)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("query error: %v", err))
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		task, err := readTask(rows)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		tasks = append(tasks, *task)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, errors.New(fmt.Sprintf("rows error: %v", err))
-	}
-
-	return tasks, nil
-}
-
 func (t *adminTX) insertExecutableTasks(ctx context.Context, tasks []task) error {
 	stmt, err := t.tx.PrepareContext(ctx, insertExecutableTasks)
 	if err != nil {

@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Printf("[register] postgres initialize error: %v\n", err)
 	}
-	s := register.NewServer(dbClient)
+	s := register.NewRouter(dbClient)
 	http.HandleFunc("/", s.ServeHTTP)
 	address := fmt.Sprintf("%s:%s", *webhost, *webport)
 	log.Printf("[register] starting server on address: %s\n", address)

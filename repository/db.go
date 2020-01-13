@@ -182,6 +182,29 @@ func (db *DB) ReadWriteTransaction(ctx context.Context, f AdminTXFunc) error {
 	return tx.Commit()
 }
 
+// GetExecutableTask is a function to get a list of tasks to be registered from taskId.
+func (db *DB) GetRegisterTask(ctx context.Context, taskId string) ([]task, error) {
+	var tasks []task
+	rows, err := db.QueryContext(ctx, selectRegisterTask, taskId)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("query error: %v", err))
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		task, err := readTask(rows)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		tasks = append(tasks, *task)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.New(fmt.Sprintf("rows error: %v", err))
+	}
+
+	return tasks, nil
+}
+
 // GetExecutableTask is the main method.
 // From the series of tasks waiting to be registered for each task flow Id,
 // resolve the dependency of the execution order.
@@ -210,20 +233,22 @@ func (db *DB) GetExecutableTask(ctx context.Context, concurrency int) ([]Executa
 }
 
 // InsertExecutableTasks registers the task waiting to be executed from the called taskId.
-func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) error {
-	err := db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
-		tasks, err := t.getRegisterTask(ctx, taskId)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
+func (db *DB) InsertExecutableTasks(ctx context.Context, taskId string) (bool, error) {
+	tasks, err := db.GetRegisterTask(ctx, taskId)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	if len(tasks) == 0 {
+		return false, nil
+	}
+	err = db.ReadWriteTransaction(ctx, func(ctx context.Context, t *adminTX) error {
 		err = t.insertExecutableTasks(ctx, tasks)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		return nil
 	})
-	return err
+	return true, err
 }
 
 // UpdateExecutableTasksRunning updates task status to running.
