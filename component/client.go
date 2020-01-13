@@ -36,10 +36,6 @@ func (c *component) HTTPPostRequest() error {
 		return errors.New("executor param does not contain URL err.")
 	}
 	body, _ := c.params["BODY"]
-	var dummy map[string]interface{}
-	if err := json.Unmarshal([]byte(body), &dummy); err != nil {
-		return errors.New("params BODY is not json format.")
-	}
 
 	client := NewClient(url)
 	if err := client.post(body); err != nil {
