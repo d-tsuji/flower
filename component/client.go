@@ -33,13 +33,16 @@ func NewClient(url string) *client {
 func (c *component) HTTPPostRequest() error {
 	url, ok := c.params["URL"]
 	if !ok {
-		return errors.New("executor param does not contain URL err.")
+		return fmt.Errorf("executor param does not contain URL err.")
 	}
-	body, _ := c.params["BODY"]
+	body, ok := c.params["BODY"]
+	if !ok {
+		return fmt.Errorf("executor param does not contain BODY err.")
+	}
 
 	client := NewClient(url)
 	if err := client.post(body); err != nil {
-		return errors.New(fmt.Sprintf("post request error. url: %s.", url))
+		return fmt.Errorf("post request error. url=%s: %w", url, err)
 	}
 	log.Printf("[component] completed HTTPPostRequest. url: %s", url)
 	return nil
@@ -74,7 +77,7 @@ func (c *client) post(payload interface{}) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("%+v: %+v", resp.Status, string(b)))
+		return fmt.Errorf("%+v: %+v", resp.Status, string(b))
 	}
 
 	log.Printf("POST response: %v", string(b))
@@ -110,7 +113,7 @@ func (c *client) get(values url.Values) ([]byte, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("HTTP Status: %v %v", resp.StatusCode, resp.Status))
+		return nil, fmt.Errorf("HTTP Status: %v %v", resp.StatusCode, resp.Status)
 	}
 
 	return body, nil
