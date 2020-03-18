@@ -40,8 +40,14 @@ services:
     container_name: watcher
     depends_on:
       - db
+    environment:
+      - DB_USER=flower
+      - DB_PASS=flower
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=flower
     build:
       context: .
       args:
         - APP_NAME=watcher
-    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./watcher", "-dbuser", "flower", "-dbhost", "db", "-dbpass", "flower"]
+    command: ["/usr/local/bin/dockerize", "-wait", "tcp://db:5432", "-timeout", "60s", "./watcher"]
