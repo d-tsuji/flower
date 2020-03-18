@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/d-tsuji/lightenv"
 
 	"github.com/d-tsuji/flower/repository"
 	"github.com/d-tsuji/flower/watcher"
@@ -26,20 +27,29 @@ const (
 	POLLING_INTERVAL_SECOND = 5
 )
 
-func main() {
-	dbuser := flag.String("dbuser", "", "postgres user")
-	dbpass := flag.String("dbpass", "", "postgres user password")
-	dbhost := flag.String("dbhost", "", "postgres host")
-	dbport := flag.String("dbport", "", "postgres port")
-	dbname := flag.String("dbname", "", "postgres database name")
-	flag.Parse()
+type flowerEnv struct {
+	DbUser string `name:"DB_USER" required:"true"`
+	DbPass string `name:"DB_PASS" required:"true"`
+	DbHost string `name:"DB_HOST" required:"true"`
+	DbPort string `name:"DB_PORT" required:"true"`
+	DbName string `name:"DB_NAME" required:"true"`
+}
 
+var f flowerEnv
+
+func init() {
+	if err := lightenv.Process(&f); err != nil {
+		log.Fatalf(fmt.Sprintf("[watcher] environment initialize error: %v\n", err))
+	}
+}
+
+func main() {
 	dbClient, err := repository.New(&repository.Opt{
-		DBName:   *dbname,
-		User:     *dbuser,
-		Password: *dbpass,
-		Host:     *dbhost,
-		Port:     *dbport,
+		DBName:   f.DbName,
+		User:     f.DbUser,
+		Password: f.DbPass,
+		Host:     f.DbHost,
+		Port:     f.DbPort,
 	})
 	defer dbClient.Close()
 	if err != nil {
